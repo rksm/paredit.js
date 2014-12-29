@@ -9,7 +9,10 @@ lively.require("lively.lang.Runtime").toRun(function() {
       // var project = r.Registry.default().projects["paredit-js"];
       // project.reloadAll(project, function(err) { err ? show(err.stack || String(err)) : alertOK("reloaded!"); })
       var files = ["./index.js",
-                   "./tests/reader-test.js"
+                   "./lib/reader.js",
+                   "./lib/navigator.js",
+                   "./tests/reader-test.js",
+                   "./tests/navigator-test.js"
                    ];
 
       lively.lang.fun.composeAsync(
