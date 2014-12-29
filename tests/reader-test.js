@@ -11,6 +11,10 @@ if (isNodejs) {
   i = module.require("immutable");
 } else { expect = window.chai.expect; i = window.Immutable; }
 
+function pos(i,r,c) { return {idx: i, row: r, column: c}; };
+
+var d = lively.lang.obj.inspect
+
 describe('reading sexps', function() {
 
   var readSeq = paredit.reader.readSeq;
@@ -102,9 +106,9 @@ describe('reading sexps', function() {
   });
 
   describe("comments", function() {
-    it("are ignored", function() {
+    it("aren't ignored", function() {
       expect(readSeq("; foo\n(baz ;; bar  \n  zork)"))
-        .deep.equals([["baz", "zork"]])
+        .deep.equals(["; foo\n", ["baz", ";; bar  \n", "zork"]])
     });
   });
 
@@ -141,6 +145,68 @@ describe('reading sexps', function() {
 
     it("anonym fun literal ", function() {
       expect(readSeq("#(foo %)")).deep.equals(["#", ["foo", "%"]]);
+    });
+
+    it("map with string", function() {
+      expect(readSeq("{:doc \"A\"}")).deep.equals([[":doc", '"A"']], d(readSeq("{:doc \"A\"}")));
+    });
+
+    it("nested map with number", function() {
+      expect(readSeq("({2})")).deep.equals([[[2]]], d(readSeq("({2})")));
+    });
+  });
+
+  describe("transforming results", function() {
+
+    it("transform function gets read data", function() {
+      var log = [];
+      function xform(type, read, start, end) {
+        log.push([type, read, start, end]);
+      }
+      var res = readSexp("foo", xform);
+      expect(log).deep.equals([['symbol', "foo", pos(0,0,0), pos(3,0,3)]]);
+    });
+
+    it("transforms the tree", function() {
+      var counter = 0;
+      function xform(type, read, start, end) {
+        return type !== "sexp" ? counter++ : read;
+      }
+      var res = readSeq('(foo ("bar" (baz) 23))', xform);
+      expect(res).deep.equals([[0, [1, [2], 3]]]);
+    });
+
+    it("transforms the tree to get locations", function() {
+      var counter = 0;
+      function xform(type, read, start, end) {
+        var result = {type: type, start: start.idx, end: end.idx}
+        if (type === "sexp") result.children = read;
+        return result;
+      }
+      var res = readSeq('(foo ("bar" (baz) 23))', xform);
+      var expected = [{
+        start: 0,end: 23,type: "sexp",
+        children: [
+          {start: 1,end: 4,type: "symbol"},
+          {start: 5,end: 21,type: "sexp",
+           children: [
+            {start: 6,end: 9,type: "string"},
+            {start: 10,end: 16,type: "sexp",
+             children: [{start: 11,end: 14,type: "symbol"}]},
+            {start: 17,end: 19,type: "number"}]
+          }]
+      }];
+      expect(res).deep.equals(expected, d(res));
+    });
+
+  });
+
+  describe("read errors", function() {
+    it("embeds error infos for premature ending", function() {
+      expect(readSexp("(foo (bar)"))
+        .deep.equals({
+          error: "Expected closing ')' at line 1 column 11",
+          start: pos(0,0,0), end: pos(11,0,11)});
     });
   });
 
