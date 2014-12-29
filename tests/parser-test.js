@@ -82,7 +82,7 @@ describe('reading sexps', function() {
 
   describe("symbols", function() {
     it("reads quoted", function() {
-      expect(readSexp("'123")).eq("'123");
+      expect(readSexp("'foo")).eq("'foo");
     });
 
     it("reads slash", function() {
@@ -94,15 +94,54 @@ describe('reading sexps', function() {
     });
   });
 
+  describe("commas", function() {
+    it("are ignored", function() {
+      expect(readSexp("{:x 1, :y a, :z b}"))
+        .deep.equals([":x",1,":y","a",":z","b"]);
+    });
+  });
+
+  describe("comments", function() {
+    it("are ignored", function() {
+      expect(readSeq("; foo\n(baz ;; bar  \n  zork)"))
+        .deep.equals([["baz", "zork"]])
+    });
+  });
+
+  describe("macro syntax", function() {
+    it("syntax quotes", function() {
+      expect(readSeq("`x")).deep.equals(["`", "x"])
+    });
+
+    it("reads it", function() {
+      expect(readSeq("`(fred x ~x lst ~@lst 7 8 :nine)"))
+      .deep.equals(["`", ["fred", "x", "~", "x", "lst", "~@", "lst", 7, 8, ":nine"]]);
+    });
+
+  });
+
   describe("examples", function() {
     it("reads threaded", function() {
       expect(readSeq("(-> foo->bar @baz .*)"))
-        .deep.equals([["->", "foo->bar", "@baz", ".*"]]);
+        .deep.equals([["->", "foo->bar", "@", "baz", ".*"]]);
     });
 
     it("deref sexp", function() {
-      expect(readSeq("@(foo)"))
-        .deep.equals(["@", ["foo"]]);
+      expect(readSeq("@(foo)")).deep.equals(["@", ["foo"]]);
+    });
+
+    it("annotation ", function() {
+      expect(readSeq("(def ^private foo)"))
+        .deep.equals([["def", "^", "private", "foo"]]);
+    });
+
+    it("var quote ", function() {
+      expect(readSeq("#'foo")).deep.equals(["#", "'foo"]);
+    });
+
+    it("anonym fun literal ", function() {
+      expect(readSeq("#(foo %)")).deep.equals(["#", ["foo", "%"]]);
     });
   });
+
 });
