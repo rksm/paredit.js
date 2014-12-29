@@ -13,7 +13,7 @@ if (isNodejs) {
 function pos(i,r,c) { return {idx: i, row: r, column: c}; };
 function printPos(p) { return p.idx + ":" + p.row + ":" + p.column; }
 
-var d = lively.lang.obj.inspect;
+var d = typeof lively !== "undefined" ? lively.lang.obj.inspect : console.dir;
 
 describe('reading sexps', function() {
 
@@ -246,4 +246,29 @@ describe('reading sexps', function() {
 
   });
 
+});
+
+describe("parsing access", function() {
+  
+  it("can parse code into an AST", function() {
+    var ast = paredit.parse(
+      "(aaa bbb [cc dddd e])",
+      {addSourceForLeafs: true});
+    var expected = {
+      type: "toplevel", start: 0, end: 21,
+      children: [
+        {start: 0,end: 21, type: "sexp",
+         children: [
+          {end: 4, start: 1, source: "aaa", type: "symbol"},
+          {end: 8, start: 5, source: "bbb", type: "symbol"},
+          {start: 9, end: 20, type: "sexp",
+           children: [
+             {end: 12, start: 10, source: "cc", type: "symbol"},
+             {end: 17, start: 13, source: "dddd", type: "symbol"},
+             {end: 19, start: 18, source: "e", type: "symbol"}]
+        }],
+      }]
+    };
+    expect(ast).deep.equals(expected, d(ast));
+  });
 });

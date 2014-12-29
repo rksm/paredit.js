@@ -18,7 +18,8 @@
       mocha.setup("bdd");
       var urls = [
         '../index.js',
-        "reader-test.js"
+        '../lib/reader.js',
+        "reader-test.js",
       ];
       loadUncached(urls, function() {
         mocha.checkLeaks();
