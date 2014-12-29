@@ -15,13 +15,13 @@
     },
 
     readSexp: function(src) {
-      return readSexp(null, i.Seq(src), i.List())[1].toJS();
+      return readSexp(null, i.Seq(src), i.List())[1].toJS()[0];
     },
   };
 
   var eos = {};
-  var close = {'[': ']', '(': ')'};
-  var symRe = /[\w']/;
+  var close = {'[': ']', '(': ')', '{': '}'};
+  var symRe = /[^\s\[\]\(\)\{\}]/;
 
   function readSexp(contextStart, stream, context) {
     var ch = stream.first();
@@ -38,7 +38,7 @@
 
     if (ch === close[contextStart]) return [stream, context, eos];
 
-    if (ch === "(" || ch === "[") {
+    if (ch === "(" || ch === "[" || ch === "{") {
       var nested = readSeq(ch, stream.rest(), i.List());
       var nextCh = nested[0].first();
       if (nextCh !== close[ch])
