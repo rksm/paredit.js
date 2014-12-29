@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Tests</title>
+    <link type="text/css" rel="stylesheet" href="../node_modules/mocha/mocha.css" />
+    <meta http-equiv="cache-control" content="no-cache" />
+    <meta http-equiv="pragma" content="no-cache" />
+  </head>
+  <body>
+    <div id="mocha"></div>
+    <script type="text/javascript" src="helper.js"></script>
+    <script type="text/javascript" src="mocha-bundle.js"></script>
+    <script type="text/javascript" src="../node_modules/lively.lang/lively.lang.dev.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/immutable/3.4.1/immutable.js"></script>
+
+    <script type="text/javascript">
+      mocha.setup("bdd");
+      var urls = [
+        '../index.js',
+        "parser-test.js"
+      ];
+      loadUncached(urls, function() {
+        mocha.checkLeaks();
+        if (window.mochaPhantomJS) mochaPhantomJS.run();
+        else mocha.run();
+      });
+    </script>
+
+  </body>
+</html>

@@ -1,0 +1,24 @@
+{
+  "name": "paredit-js",
+  "version": "0.1.0",
+  "description": "Generic parser and editor for s-expressions.",
+  "main": "index.js",
+  "scripts": {
+    "test": "node_modules/mocha/bin/mocha tests/*-test.js"
+  },
+  "keywords": [
+    "paredit",
+    "lisp"
+  ],
+  "dependencies": {
+    "lively.lang": "*",
+    "immutable": "*"
+  },
+  "devDependencies": {
+    "chai": "^1.10.0",
+    "chai-subset": "^0.3.0",
+    "mocha": "^2.0.1"
+  },
+  "author": "Robert Krahn",
+  "license": "MIT"
+}
