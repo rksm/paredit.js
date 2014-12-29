@@ -115,7 +115,7 @@ describe('reading sexps', function() {
 
     it("reads it", function() {
       expect(readSeq("`(fred x ~x lst ~@lst 7 8 :nine)"))
-      .deep.equals(["`", ["fred", "x", "~", "x", "lst", "~@", "lst", 7, 8, ":nine"]]);
+        .deep.equals(["`", ["fred", "x", "~", "x", "lst", "~@", "lst", 7, 8, ":nine"]]);
     });
 
   });

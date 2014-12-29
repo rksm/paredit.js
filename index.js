@@ -16,7 +16,7 @@
 
     readSexp: function(src) {
       return readSexp(null, i.Seq(src), i.List())[1].toJS()[0];
-    }
+    },
   };
 
   var eos = {};
@@ -29,7 +29,7 @@
 
     if (!ch && contextStart) {
       throw new Error("Early end, expected to close "
-        + contextStart + " with " + close[contextStart]);
+        + contextStart + " with " + close[contextStart])
     }
 
     if (!ch || /\s|,/.test(ch)) return [stream.rest(), context];
@@ -63,18 +63,13 @@
     return [stream, context];
   }
 
-  function readNumber(src) {
-    var n = Number(src);
-    return isNaN(n) ? null : n;
-  }
-
   function readString(stream, context) {
     var read = '"'; stream = stream.rest();
     while (true) {
       read += stream.takeWhile(function(str, c) { return c !== '"'; }).join("");
       stream = stream.slice(read.length+1);
       if (read[read.length-1] === '\\') {
-        read += '"';
+        read += '"'; 
       } else break;
     }
     return [stream.rest(), context.push(read)];
