@@ -8,12 +8,12 @@ if (isNodejs) {
   var chai = module.require('chai');
   chai.use(module.require('chai-subset'));
   expect = chai.expect;
-  i = module.require("immutable");
-} else { expect = window.chai.expect; i = window.Immutable; }
+} else { expect = window.chai.expect; }
 
 function pos(i,r,c) { return {idx: i, row: r, column: c}; };
+function printPos(p) { return p.idx + ":" + p.row + ":" + p.column; }
 
-var d = lively.lang.obj.inspect
+var d = lively.lang.obj.inspect;
 
 describe('reading sexps', function() {
 
@@ -35,7 +35,7 @@ describe('reading sexps', function() {
     });
 
     it('reads empty sexp', function() {
-      expect(readSeq("()")).deep.equals([[]]);
+      expect(readSeq("()")).deep.equals([[]], d(readSeq("()")));
     });
 
     it('reads simple list', function() {
@@ -44,7 +44,7 @@ describe('reading sexps', function() {
 
     it('reads nested lists', function() {
       expect(readSeq("(foo bar) (baz (zzz)) zork"))
-        .deep.equals([["foo", "bar"], ["baz", ["zzz"]], "zork"]);
+        .deep.equals([["foo", "bar"], ["baz", ["zzz"]], "zork"], d(readSeq("(foo bar) (baz (zzz)) zork")));
     });
 
     it('reads vector syntax', function() {
@@ -156,14 +156,24 @@ describe('reading sexps', function() {
     });
   });
 
+  describe("tagging positions", function() {
+    it("correctly tracks sexps", function() {
+      var p = [];
+      function xform(type, read, start, end) {
+        if (type === 'sexp')
+          p.push(printPos(start) + "-" + printPos(end));
+      }
+      readSeq("(a (bb\nc))", xform);
+      expect(p).deep.equals([ '3:0:3-9:1:2', '0:0:0-10:1:3' ]);
+    })
+  });
+
   describe("transforming results", function() {
 
     it("transform function gets read data", function() {
       var log = [];
-      function xform(type, read, start, end) {
-        log.push([type, read, start, end]);
-      }
-      var res = readSexp("foo", xform);
+      function xform(type, read, start, end) { log.push([type, read, start, end]); }
+      readSexp("foo", xform);
       expect(log).deep.equals([['symbol', "foo", pos(0,0,0), pos(3,0,3)]]);
     });
 
@@ -183,19 +193,18 @@ describe('reading sexps', function() {
         if (type === "sexp") result.children = read;
         return result;
       }
-      var res = readSeq('(foo ("bar" (baz) 23))', xform);
-      var expected = [{
-        start: 0,end: 23,type: "sexp",
-        children: [
-          {start: 1,end: 4,type: "symbol"},
-          {start: 5,end: 21,type: "sexp",
-           children: [
-            {start: 6,end: 9,type: "string"},
-            {start: 10,end: 16,type: "sexp",
-             children: [{start: 11,end: 14,type: "symbol"}]},
-            {start: 17,end: 19,type: "number"}]
-          }]
-      }];
+      var res = readSeq('foo (bar "xyz"\n(12) \'z)', xform);
+      var expected = [
+        {start: 0,end: 3,type: "symbol"},
+        {start: 4,end: 23,type: "sexp", children: [
+          {start:5,end:8,type: "symbol"},
+          {start:9,end:14,type: "string"},
+          {start:15,end:19,type: "sexp", children: [
+            {start:16,end:18,type: "number"}
+          ]},
+          {start:20,end:22,type: "symbol"},
+        ]}
+      ];
       expect(res).deep.equals(expected, d(res));
     });
 
@@ -203,11 +212,37 @@ describe('reading sexps', function() {
 
   describe("read errors", function() {
     it("embeds error infos for premature ending", function() {
-      expect(readSexp("(foo (bar)"))
-        .deep.equals({
-          error: "Expected closing ')' at line 1 column 11",
-          start: pos(0,0,0), end: pos(11,0,11)});
+      expect(readSexp("(a(b)"))
+        .deep.equals(['a', ['b'], {
+          error: "Expected ')' but reached end of input at line 1 column 5",
+          start: pos(0,0,0), end: pos(5,0,5)}], d(readSexp("(a(b)")));
     });
+
+    it("unmatched square bracket 1", function() {
+      expect(readSeq("(a)(x(let[bar y)z)(b)")).to.containSubset([
+        ['a'],
+        ['x', ['let', ['bar', 'y',
+                      {error: "Expected ']' but got ')' at line 1 column 15"}],
+              'z'],
+              ['b'],
+              {error: "Expected ')' but reached end of input at line 1 column 21"}],
+      ]);
+    });
+
+    it("unmatched square bracket 2", function() {
+      expect(readSeq("(a (b)](x y)")).to.containSubset([
+        ['a', ['b'],
+         {error: "Expected ')' but got ']' at line 1 column 6"}],
+        ['x', 'y']]);
+    });
+
+    it("closed too often 1", function() {
+      console.log(d(readSeq("(a))(x y)")));
+      expect(readSeq("(a))(x y)")).to.containSubset([
+        ["a"],
+        {error: "Expected closing ')' at line 1 column 8"}]);
+    });
+
   });
 
 });

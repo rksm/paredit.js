@@ -31,64 +31,74 @@
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   // read logic
 
-  var eosexp = {},
+  var eosexp = {}, eoinput = {}, // flags
       close = {'[': ']', '(': ')', '{': '}'},
+      opening = Object.keys(close),
+      closing = opening.map(function(k) { return close[k]; }),
       symRe = /[^\s\[\]\(\)\{\},]/,
       readerSpecials = /[`@^#~]/;
 
   function readSexp(contextStart, input, context, pos, xform) {
     var ch = input[0];
 
-    if (!ch && contextStart) {
-      throw new Error("Early end, expected to close "
-        + contextStart + " with " + close[contextStart])
+    // We have reached the end of input but expting more.
+    if (!ch && contextStart && close[contextStart]) {
+      return {input: input, context: context, pos: pos, flag: eoinput};
     }
 
-    if (!ch || /\s|,/.test(ch)) return {
+    // If there is no contextStart and no char left we are at the topLevel
+    // and done reading.
+    if (!ch && !close[contextStart]) return {
+      input: input,
+      context: context,
+      pos: pos,
+      flag: eoinput
+    }
+
+    // 3. whitespace
+    if (/\s|,/.test(ch)) return {
       input: input.slice(1),
       context: context,
       pos: forward(pos, ch)
     };
 
+    // 4. Various read rules
     if (readerSpecials.test(ch)) return readReaderSpecials(input, context, pos, xform);
     if (ch === ';') return readComment(input, context, pos, xform);
     if (ch === '"') return readString(input, context, pos, xform);
     if (/[0-9]/.test(ch)) return readNumber(input, context, pos, xform);
     if (symRe.test(ch)) return readSymbol(input, context, pos, xform);
 
-    if (ch === close[contextStart]) return {
-      input: input,
-      context: context,
-      pos: forward(pos, ch),
-      flag: eosexp
-    };
+    if (closing.indexOf(ch) > -1) {
+      return {input: input, context: context, pos: pos, flag: eosexp}
+    }
 
-    if (ch === "(" || ch === "[" || ch === "{") {
-      var startPos = clonePos(pos);
-      var nested = readSeq(ch, input.slice(1), Object.freeze([]), forward(pos, ch), xform);
-      var nextCh = nested.input[0];
+    if (opening.indexOf(ch) > -1) {
+      var startPos = clonePos(pos),
+          nested = readSeq(ch, input.slice(1), Object.freeze([]), forward(pos, ch), xform),
+          nextCh = nested.input[0];
 
-      var sexp, endPos, restInput;
       if (nextCh !== close[ch]) {
-        var errPos = clonePos(nested.pos);
-        var err = readError("Expected closing ')'", startPos, errPos);
-        sexp = err;
-        endPos = nested.pos;
-        restInput = nested.input;
-      } else {
-        sexp = nested.context;
-        endPos = forward(nested.pos, close[ch]);
-        restInput = nested.input.slice(1);
+        var errPos = clonePos(nested.pos),
+            errMsg = "Expected '" + close[ch] + "'"
+                   + (nextCh ? " but got '" + nextCh + "'" :
+                      " but reached end of input"),
+            err = readError(errMsg, startPos, errPos);
+        nested.context.push(err);
       }
-
-      sexp = callTransform(xform, "sexp", sexp, startPos, endPos);;
+      
+      var endPos = nextCh ? forward(nested.pos, nextCh) : nested.pos;
+      var restInput = nested.input.slice(nextCh ? 1 : 0);
+      var sexp = callTransform(xform, "sexp", nested.context, startPos, endPos);;
       context = context.concat([sexp]);
 
       return {input: restInput, context: context, pos: endPos}
     }
-    
+
+    // If we are here, either there is a char not covered by the sexp reader
+    // rules or we are toplevel and encountered garbage
     var startPos = clonePos(pos), errPos = forward(pos, ch);
-    var err = readError("No rule for reading: " + ch, startPos, errPos);
+    var err = readError("Unexpected character: " + ch, startPos, errPos);
     context = context.concat([err]);
     return {input: input.slice(1), context: context, pos: errPos};
   }
@@ -99,22 +109,28 @@
       counter++; if (counter > 10000) throw new Error("endless loop at " + printPos(pos));
       result = readSexp(contextStart, input, context, pos, xform);
       input = result.input; context = result.context; pos = result.pos;
-      if (result.flag === eosexp || input.length === 0) break;
+      // if ((result.flag === eosexp && !contextStart)) debugger;
+      // if ((result.flag === eosexp && contextStart) || input.length === 0) break;
+      // if (result.flag === eoinput || (result.flag === eosexp && input.length === 0)) break;
+      if ((result.flag === eoinput) || (result.flag === eosexp)) break;
     };
     return {input: input, context: context, pos: pos};
   }
 
   function readString(input, context, pos, xform) {
     var escaped = false;
-    return takeWhile(input.slice(1), pos, function(c) {
+    var startPos = clonePos(pos);
+    var string = input[0];
+    pos = forward(pos, input[0]); input = input.slice(1);
+    return takeWhile(input, pos, function(c) {
       if (!escaped && c === '"') return false;
       if (escaped) escaped = false
       else if (c === "\\") escaped = true;
       return true;
     }, function(read, rest, prevPos, newPos) {
-      read = '"' + read + rest[0];
-      var result = callTransform(xform, "string", read, prevPos, newPos);
-      rest = rest.slice(1)
+      string = string + read + rest[0];
+      newPos = forward(newPos, rest[0]); rest = rest.slice(1);
+      var result = callTransform(xform, "string", string, startPos, newPos);
       context = context.concat([result]);
       return {pos:newPos,input:rest,context:context};
     });
@@ -167,12 +183,12 @@
     return {
       error: msg + " at line "
           + (endPos.row+1) + " column " + endPos.column,
-      start: startPos, end: endPos
+      start: clonePos(startPos), end: clonePos(endPos)
     }
   }
 
   function callTransform(xform, type, read, start, end) {
-    return xform ? xform(type, read, start, end) : read;
+    return xform ? xform(type, read, clonePos(start), clonePos(end)) : read;
   }
 
   function takeWhile(string, pos, fun, withResultDo) {
