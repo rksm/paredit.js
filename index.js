@@ -6,8 +6,8 @@
   var isNodejs = typeof module !== "undefined" && module.require;
   var exports = isNodejs ? module.exports : (window.paredit = {});
   if (isNodejs) {
-    exports.reader = module.require("./lib/reader");
-    exports.navigator = module.require("./lib/navigator");
+    exports.reader = module.require("./lib/reader").reader;
+    exports.navigator = module.require("./lib/navigator").navigator;
   }
 
   exports.parse = function(src, options) {
