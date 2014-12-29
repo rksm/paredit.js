@@ -1,4 +1,4 @@
-/*global window, process, global*/
+/*global window, process, global, module*/
 
 ;(function(run) {
   var isNodejs = typeof module !== "undefined" && module.require;
@@ -10,12 +10,12 @@
   exports.parser = {
     parseLisp: function(src) {
       return exports.reader.readSeq(src, function xform(type, read, start, end) {
-        var result = {type: type, start: start.idx, end: end.idx}
+        var result = {type: type, start: start.idx, end: end.idx};
         if (type === "sexp") result.children = read;
         return result;
       });
     }
-  }
+  };
 
   exports.reader = {
 
@@ -53,7 +53,7 @@
       context: context,
       pos: pos,
       flag: eoinput
-    }
+    };
 
     // 3. whitespace
     if (/\s|,/.test(ch)) return {
@@ -72,9 +72,9 @@
     if (closing.indexOf(ch) > -1) {
       if (!contextStart) {
         var junk = readJunk(input, context, pos, xform);
-        return {input: junk.input, context: junk.context, pos: junk.pos}
+        return {input: junk.input, context: junk.context, pos: junk.pos};
       }
-      return {input: input, context: context, pos: pos, flag: eosexp}
+      return {input: input, context: context, pos: pos, flag: eosexp};
     }
 
     if (opening.indexOf(ch) > -1) {
@@ -96,14 +96,14 @@
       var sexp = callTransform(xform, "sexp", nested.context, startPos, endPos);;
       context = context.concat([sexp]);
 
-      return {input: restInput, context: context, pos: endPos}
+      return {input: restInput, context: context, pos: endPos};
     }
 
     // If we are here, either there is a char not covered by the sexp reader
     // rules or we are toplevel and encountered garbage
     var startPos = clonePos(pos), errPos = forward(pos, ch);
-    var err = readError("Unexpected character: " + ch, startPos, errPos);
-    context = context.concat([err]);
+    context = context.concat([
+      readError("Unexpected character: " + ch, startPos, errPos)]);
     return {input: input.slice(1), context: context, pos: errPos};
   }
 
@@ -130,7 +130,7 @@
     pos = forward(pos, input[0]); input = input.slice(1);
     return takeWhile(input, pos, function(c) {
       if (!escaped && c === '"') return false;
-      if (escaped) escaped = false
+      if (escaped) escaped = false;
       else if (c === "\\") escaped = true;
       return true;
     }, function(read, rest, prevPos, newPos) {
@@ -157,7 +157,7 @@
       function(c) { return /[0-9]/.test(c); },
       function(read, rest, prevPos, newPos) {
         var result = callTransform(xform, "number", Number(read), prevPos, newPos);
-        context = context.concat([result])
+        context = context.concat([result]);
         return {pos:newPos,input:rest,context:context};
       });
   }
@@ -188,7 +188,7 @@
       // FIXME: there can be other junk except closing parens...
       function(c) { return closing.indexOf(c) > -1; },
       function(read, rest, prevPos, newPos) {
-        var err = readError("Unexpected input: '" + read + "'", prevPos, newPos)
+        var err = readError("Unexpected input: '" + read + "'", prevPos, newPos);
         var result = callTransform(xform, "junk", err, prevPos, newPos);
         context = context.concat([result]);
         return {pos: newPos,input:rest,context:context};
@@ -202,7 +202,7 @@
       error: msg + " at line "
           + (endPos.row+1) + " column " + endPos.column,
       start: clonePos(startPos), end: clonePos(endPos)
-    }
+    };
   }
 
   function callTransform(xform, type, read, start, end) {
