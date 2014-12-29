@@ -240,7 +240,8 @@ describe('reading sexps', function() {
       console.log(d(readSeq("(a))(x y)")));
       expect(readSeq("(a))(x y)")).to.containSubset([
         ["a"],
-        {error: "Expected closing ')' at line 1 column 8"}]);
+        {error: "Unexpected input: ')' at line 1 column 4"},
+        ["x", "y"]]);
     });
 
   });

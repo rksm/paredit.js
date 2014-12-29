@@ -70,6 +70,10 @@
     if (symRe.test(ch)) return readSymbol(input, context, pos, xform);
 
     if (closing.indexOf(ch) > -1) {
+      if (!contextStart) {
+        var junk = readJunk(input, context, pos, xform);
+        return {input: junk.input, context: junk.context, pos: junk.pos}
+      }
       return {input: input, context: context, pos: pos, flag: eosexp}
     }
 
@@ -86,7 +90,7 @@
             err = readError(errMsg, startPos, errPos);
         nested.context.push(err);
       }
-      
+
       var endPos = nextCh ? forward(nested.pos, nextCh) : nested.pos;
       var restInput = nested.input.slice(nextCh ? 1 : 0);
       var sexp = callTransform(xform, "sexp", nested.context, startPos, endPos);;
@@ -109,10 +113,12 @@
       counter++; if (counter > 10000) throw new Error("endless loop at " + printPos(pos));
       result = readSexp(contextStart, input, context, pos, xform);
       input = result.input; context = result.context; pos = result.pos;
-      // if ((result.flag === eosexp && !contextStart)) debugger;
-      // if ((result.flag === eosexp && contextStart) || input.length === 0) break;
-      // if (result.flag === eoinput || (result.flag === eosexp && input.length === 0)) break;
-      if ((result.flag === eoinput) || (result.flag === eosexp)) break;
+      if (result.flag === eoinput || (result.flag === eosexp && (contextStart || !input.length)))
+        break;
+
+      // if (result.flag === eosexp && !contextStart)
+      //   result = readJunk(input, context, pos, xform);
+      // input = result.input; context = result.context; pos = result.pos;
     };
     return {input: input, context: context, pos: pos};
   }
@@ -172,6 +178,18 @@
       function(c) { return readerSpecials.test(c); },
       function(read, rest, prevPos, newPos) {
         var result = callTransform(xform, "special", read, prevPos, newPos);
+        context = context.concat([result]);
+        return {pos: newPos,input:rest,context:context};
+      });
+  }
+
+  function readJunk(input, context, pos, xform) {
+    return takeWhile(input, pos,
+      // FIXME: there can be other junk except closing parens...
+      function(c) { return closing.indexOf(c) > -1; },
+      function(read, rest, prevPos, newPos) {
+        var err = readError("Unexpected input: '" + read + "'", prevPos, newPos)
+        var result = callTransform(xform, "junk", err, prevPos, newPos);
         context = context.concat([result]);
         return {pos: newPos,input:rest,context:context};
       });
