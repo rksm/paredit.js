@@ -32,7 +32,7 @@ var nav = paredit.navigator;
 describe('paredit navigator', function() {
 
   var ast1 = paredit.parse(
-    "(aaa bbb [cc dddd e])",
+    "(aaa bbb [cc dddd e] ())",
     {addSourceForLeafs: true});
 
   describe("basic movements", function() {
@@ -40,7 +40,7 @@ describe('paredit navigator', function() {
     describe("forwardSexp", function() {
 
       it("|(...)->(...)|", function() {
-        expect(nav.forwardSexp(ast1, 0)).eq(21);
+        expect(nav.forwardSexp(ast1, 0)).eq(24);
         expect(nav.forwardSexp(ast1, 1)).eq(4);
       });
 
@@ -49,5 +49,28 @@ describe('paredit navigator', function() {
       });
 
     });
-  })
+
+    describe("backwardSexp", function() {
+
+      it("(...)|->|(...)", function() {
+        expect(nav.backwardSexp(ast1, 24)).eq(0);
+        expect(nav.backwardSexp(ast1, 4)).eq(1);
+      });
+
+      it("(...) |->|(...)", function() { 
+        expect(nav.backwardSexp(ast1, 5)).eq(1);
+      });
+
+    });
+
+    describe("forwardDown", function() {
+
+      it("|(...)->(|...)", function() {
+        expect(nav.forwardDownSexp(ast1, 0)).eq(1);
+        expect(nav.forwardDownSexp(ast1, 1)).eq(10);
+        expect(nav.forwardDownSexp(ast1, 20)).eq(22);
+      });
+
+    });
+  });
 });
