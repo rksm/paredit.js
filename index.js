@@ -13,16 +13,23 @@
   exports.parse = function(src, options) {
     options = options || {};
     var addSrc = !!options.addSourceForLeafs;
+    var errors = [];
+    
     var nodes = exports.reader.readSeq(src, function xform(type, read, start, end) {
       var result = {type: type, start: start.idx, end: end.idx};
-      if (addSrc && type !== 'list')
+      if (type === "error") {
+        result.error = read.error;
+        errors.push(result);
+      } else if (addSrc && type !== 'list')
         result.source = src.slice(result.start, result.end)
       if (type === "list") result.children = read;
       return result;
     });
+
     return {
       type: "toplevel", start: 0,
       end: (nodes && nodes.length && nodes[nodes.length-1].end) || 0,
+      errors: errors,
       children: nodes
     };
   }

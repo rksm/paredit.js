@@ -210,38 +210,49 @@ describe('reading sexps', function() {
 
   });
 
+  function diff(read, expected) {
+    return "\n" + JSON.stringify(read) +"\nvs.\n" + JSON.stringify(expected) + '\n';
+  }
+
   describe("read errors", function() {
     it("embeds error infos for premature ending", function() {
-      expect(readSexp("(a(b)"))
-        .deep.equals(['a', ['b'], {
-          error: "Expected ')' but reached end of input at line 1 column 5",
-          start: pos(0,0,0), end: pos(5,0,5)}], d(readSexp("(a(b)")));
+      var actual = readSexp("(a(b)"),
+          expected = {
+            error: "Expected ')' but reached end of input at line 1 column 5",
+            start: pos(0,0,0), end: pos(5,0,5)};
+      expect(actual).deep.equals(expected, diff(actual,expected));
     });
 
     it("unmatched square bracket 1", function() {
-      expect(readSeq("(a)(x(let[bar y)z)(b)")).to.containSubset([
-        ['a'],
-        ['x', ['let', ['bar', 'y',
-                      {error: "Expected ']' but got ')' at line 1 column 15"}],
-              'z'],
-              ['b'],
-              {error: "Expected ')' but reached end of input at line 1 column 21"}],
-      ]);
+      var actual = readSeq("(a)(x(let[bar y)z)(b)"),
+          expected = [
+            ['a'],
+            {error: "Expected ')' but reached end of input at line 1 column 21"}];
+      expect(actual).to.containSubset(expected);
     });
 
     it("unmatched square bracket 2", function() {
-      expect(readSeq("(a (b)](x y)")).to.containSubset([
-        ['a', ['b'],
-         {error: "Expected ')' but got ']' at line 1 column 6"}],
-        ['x', 'y']]);
+      var actual = readSeq("(a (b)](x y)"),
+          expected = [
+            {error: "Expected ')' but got ']' at line 1 column 6"},
+            ['x', 'y']];
+      expect(actual).to.containSubset(expected);
     });
 
     it("closed too often 1", function() {
-      console.log(d(readSeq("(a))(x y)")));
       expect(readSeq("(a))(x y)")).to.containSubset([
         ["a"],
         {error: "Unexpected input: ')' at line 1 column 4"},
         ["x", "y"]]);
+    });
+
+    it("closed too often 2", function() {
+      var actual = readSeq("a)"),
+          expected = [
+            "a",
+            {error: "Unexpected input: ')' at line 1 column 2"}]
+      console.log(diff(actual,expected));
+      expect(actual).to.containSubset(expected);
     });
 
   });
@@ -256,6 +267,7 @@ describe("parsing access", function() {
       {addSourceForLeafs: true});
     var expected = {
       type: "toplevel", start: 0, end: 21,
+      errors: [],
       children: [
         {start: 0,end: 21, type: "list",
          children: [
@@ -270,5 +282,18 @@ describe("parsing access", function() {
       }]
     };
     expect(ast).deep.equals(expected, d(ast));
+  });
+
+  it("gives access to errors", function() {
+    var ast = paredit.parse("a(", {addSourceForLeafs: true});
+    var expected = {
+      type: "toplevel", start: 0, end: 2,
+      errors: [],
+      children: [
+        {},
+        {error: "Expected ')' but reached end of input at line 1 column 2"}
+      ]
+    };
+    expect(ast).to.containSubset(expected, d(ast));
   });
 });
