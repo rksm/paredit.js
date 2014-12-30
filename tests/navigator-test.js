@@ -37,7 +37,7 @@ describe('paredit navigator', function() {
   var ast1 = parse("(aaa bbb [cc dddd e]) ()");
 
   describe("basic movements", function() {
-
+    
     describe("forwardSexp", function() {
 
       it("|(...)->(...)|", function() {
@@ -45,7 +45,7 @@ describe('paredit navigator', function() {
         expect(nav.forwardSexp(ast1, 1)).eq(4);
       });
 
-      it("| (...)->(...)|", function() {
+      it("| (...)->(...)|", function() { 
         expect(nav.forwardSexp(ast1, 4)).eq(8);
       });
 
@@ -59,7 +59,7 @@ describe('paredit navigator', function() {
         expect(nav.backwardSexp(ast1, 4)).eq(1);
       });
 
-      it("(...) |->|(...)", function() {
+      it("(...) |->|(...)", function() { 
         expect(nav.backwardSexp(ast1, 5)).eq(1);
       });
 
@@ -87,31 +87,60 @@ describe('paredit navigator', function() {
   });
 
   describe("sexp boundaries", function() {
-
+    
     describe('range for idx', function() {
       it("...xxx|...->...*xxx*...", function() {
         expect(nav.sexpRange(parse("  aaa  "), 5)).deep.eq([2,5]);
       });
-
+  
       it("(xxx|)->(*xxx*)", function() {
         expect(nav.sexpRange(parse("(aa)"), 3)).deep.eq([1,3]);
         expect(nav.sexpRange(parse("(aa bbb)"), 3)).deep.eq([1,3]);
       });
-
-      it(".(xxx.|.)..->..*(xxx..)*..", function() {
-        expect(nav.sexpRange(parse(" (aaa  ) "), 6)).deep.eq([1,8]);
+  
+      it(".(xxx.|.)..->..(*xxx..*)..", function() {
+        expect(nav.sexpRange(parse(" (aaa  ) "), 6)).deep.eq([2,7]);
       });
 
+      it("(.|.)->(*...*)", function() {
+        expect(nav.sexpRange(parse("(   )"), 2)).deep.eq([1,4]);
+      });
+
+      it("|()->*()*", function() {
+        expect(nav.sexpRange(parse("()"), 0)).deep.eq([0,2]);
+        expect(nav.sexpRange(parse("()"), 2)).deep.eq([0,2]);
+      });
+
+      it('".|."->"*...*"', function() {
+        expect(nav.sexpRange(parse('"foo"'), 2)).deep.eq([1,4]);
+      });
+  
       it("ignores toplevel", function() {
         expect(nav.sexpRange(parse("a  a"), 2)).deep.eq(null);
       });
-
+      
     })
 
     describe("expansion", function() {
 
-      it(".(*xxx*)..->..*(xxx..)*..", function() {
-        expect(nav.sexpRangeExpansion(parse(" (aaa  ) "), 2,5)).deep.eq([1,8]);
+      it(".(*xxx*)..->..*(xxx)*..", function() {
+        expect(nav.sexpRangeExpansion(parse(" (aaa) "), 2,5)).deep.eq([1,6]);
+      });
+
+      it(".(xx*x)*..->..*(xxx)*..", function() {
+        expect(nav.sexpRangeExpansion(parse(" (aaa) "), 4,6)).deep.eq([1,6]);
+      });
+
+      it('."*xxx*")..->..*"xxx"*..', function() {
+        expect(nav.sexpRangeExpansion(parse(' "aaa" '), 2,5)).deep.eq([1,6]);
+      });
+
+      it('."*xx*x")..->.."*xxx*"..', function() {
+        expect(nav.sexpRangeExpansion(parse(' "aaa" '), 2,4)).deep.eq([2,5]);
+      });
+
+      it("(*x* x)->(*x xx*)", function() {
+        expect(nav.sexpRangeExpansion(parse("(a aa)"), 1,2)).deep.eq([1,5]);
       });
 
       it("dont expand to toplevel", function() {
