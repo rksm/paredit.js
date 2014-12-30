@@ -160,7 +160,7 @@ describe('reading sexps', function() {
     it("correctly tracks sexps", function() {
       var p = [];
       function xform(type, read, start, end) {
-        if (type === 'sexp')
+        if (type === 'list')
           p.push(printPos(start) + "-" + printPos(end));
       }
       readSeq("(a (bb\nc))", xform);
@@ -180,7 +180,7 @@ describe('reading sexps', function() {
     it("transforms the tree", function() {
       var counter = 0;
       function xform(type, read, start, end) {
-        return type !== "sexp" ? counter++ : read;
+        return type !== "list" ? counter++ : read;
       }
       var res = readSeq('(foo ("bar" (baz) 23))', xform);
       expect(res).deep.equals([[0, [1, [2], 3]]]);
@@ -190,16 +190,16 @@ describe('reading sexps', function() {
       var counter = 0;
       function xform(type, read, start, end) {
         var result = {type: type, start: start.idx, end: end.idx}
-        if (type === "sexp") result.children = read;
+        if (type === "list") result.children = read;
         return result;
       }
       var res = readSeq('foo (bar "xyz"\n(12) \'z)', xform);
       var expected = [
         {start: 0,end: 3,type: "symbol"},
-        {start: 4,end: 23,type: "sexp", children: [
+        {start: 4,end: 23,type: "list", children: [
           {start:5,end:8,type: "symbol"},
           {start:9,end:14,type: "string"},
-          {start:15,end:19,type: "sexp", children: [
+          {start:15,end:19,type: "list", children: [
             {start:16,end:18,type: "number"}
           ]},
           {start:20,end:22,type: "symbol"},
@@ -257,11 +257,11 @@ describe("parsing access", function() {
     var expected = {
       type: "toplevel", start: 0, end: 21,
       children: [
-        {start: 0,end: 21, type: "sexp",
+        {start: 0,end: 21, type: "list",
          children: [
           {end: 4, start: 1, source: "aaa", type: "symbol"},
           {end: 8, start: 5, source: "bbb", type: "symbol"},
-          {start: 9, end: 20, type: "sexp",
+          {start: 9, end: 20, type: "list",
            children: [
              {end: 12, start: 10, source: "cc", type: "symbol"},
              {end: 17, start: 13, source: "dddd", type: "symbol"},

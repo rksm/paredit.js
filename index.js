@@ -15,9 +15,9 @@
     var addSrc = !!options.addSourceForLeafs;
     var nodes = exports.reader.readSeq(src, function xform(type, read, start, end) {
       var result = {type: type, start: start.idx, end: end.idx};
-      if (addSrc && type !== 'sexp')
+      if (addSrc && type !== 'list')
         result.source = src.slice(result.start, result.end)
-      if (type === "sexp") result.children = read;
+      if (type === "list") result.children = read;
       return result;
     });
     return {
