@@ -28,23 +28,24 @@ function dummyEdit(source) {
 }
 
 var nav = paredit.navigator;
+var parse = function(src) {
+  return paredit.parse(src, {addSourceForLeafs: true});
+};
 
 describe('paredit navigator', function() {
 
-  var ast1 = paredit.parse(
-    "(aaa bbb [cc dddd e] ())",
-    {addSourceForLeafs: true});
+  var ast1 = parse("(aaa bbb [cc dddd e]) ()");
 
   describe("basic movements", function() {
-    
+
     describe("forwardSexp", function() {
 
       it("|(...)->(...)|", function() {
-        expect(nav.forwardSexp(ast1, 0)).eq(24);
+        expect(nav.forwardSexp(ast1, 0)).eq(21);
         expect(nav.forwardSexp(ast1, 1)).eq(4);
       });
 
-      it("| (...)->(...)|", function() { 
+      it("| (...)->(...)|", function() {
         expect(nav.forwardSexp(ast1, 4)).eq(8);
       });
 
@@ -53,11 +54,12 @@ describe('paredit navigator', function() {
     describe("backwardSexp", function() {
 
       it("(...)|->|(...)", function() {
-        expect(nav.backwardSexp(ast1, 24)).eq(0);
+        expect(nav.backwardSexp(ast1, 24)).eq(22);
+        expect(nav.backwardSexp(ast1, 21)).eq(0);
         expect(nav.backwardSexp(ast1, 4)).eq(1);
       });
 
-      it("(...) |->|(...)", function() { 
+      it("(...) |->|(...)", function() {
         expect(nav.backwardSexp(ast1, 5)).eq(1);
       });
 
@@ -67,8 +69,8 @@ describe('paredit navigator', function() {
 
       it("|(...)->(|...)", function() {
         expect(nav.forwardDownSexp(ast1, 0)).eq(1);
-        // expect(nav.forwardDownSexp(ast1, 1)).eq(10);
-        // expect(nav.forwardDownSexp(ast1, 20)).eq(22);
+        expect(nav.forwardDownSexp(ast1, 1)).eq(10);
+        expect(nav.forwardDownSexp(ast1, 22)).eq(23);
       });
 
     });
@@ -78,9 +80,45 @@ describe('paredit navigator', function() {
       it("(..|.)->|(...)", function() {
         expect(nav.backwardUpSexp(ast1, 8)).eq(0);
         expect(nav.backwardUpSexp(ast1, 15)).eq(9);
-        expect(nav.backwardUpSexp(ast1, 24)).eq(24);
+        expect(nav.backwardUpSexp(ast1, 21)).eq(21);
       });
 
     });
+  });
+
+  describe("sexp boundaries", function() {
+
+    describe('range for idx', function() {
+      it("...xxx|...->...*xxx*...", function() {
+        expect(nav.sexpRange(parse("  aaa  "), 5)).deep.eq([2,5]);
+      });
+
+      it("(xxx|)->(*xxx*)", function() {
+        expect(nav.sexpRange(parse("(aa)"), 3)).deep.eq([1,3]);
+        expect(nav.sexpRange(parse("(aa bbb)"), 3)).deep.eq([1,3]);
+      });
+
+      it(".(xxx.|.)..->..*(xxx..)*..", function() {
+        expect(nav.sexpRange(parse(" (aaa  ) "), 6)).deep.eq([1,8]);
+      });
+
+      it("ignores toplevel", function() {
+        expect(nav.sexpRange(parse("a  a"), 2)).deep.eq(null);
+      });
+
+    })
+
+    describe("expansion", function() {
+
+      it(".(*xxx*)..->..*(xxx..)*..", function() {
+        expect(nav.sexpRangeExpansion(parse(" (aaa  ) "), 2,5)).deep.eq([1,8]);
+      });
+
+      it("dont expand to toplevel", function() {
+        expect(nav.sexpRangeExpansion(parse(" (a) a"), 1,4)).deep.eq(null);
+      });
+
+    });
+
   });
 });

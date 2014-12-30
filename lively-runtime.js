@@ -43,6 +43,10 @@ lively.require("lively.lang.Runtime").toRun(function() {
           lively.lang.arr.mapAsyncSeries(fileContents,
             function(ea,_,n) { r.Project.processChange(project, ea.name, ea.content, n); },
             next);
+        },
+        function(results, n) {
+          window.paredit = project.state.paredit;
+          n(null, results);
         }
       )(thenDo);
     },
