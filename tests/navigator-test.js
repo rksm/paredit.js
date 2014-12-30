@@ -149,5 +149,12 @@ describe('paredit navigator', function() {
 
     });
 
+    describe("defun", function() {
+      it("rangeForDefun", function() {
+        expect(nav.rangeForDefun(parse("(y) (defn x [args] 23) (23)"), 14))
+          .deep.eq([4,22]);
+      });
+    });
+
   });
 });
