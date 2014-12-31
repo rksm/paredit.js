@@ -110,6 +110,20 @@ describe('reading sexps', function() {
       expect(readSeq("; foo\n(baz ;; bar  \n  zork)"))
         .deep.equals(["; foo\n", ["baz", ";; bar  \n", "zork"]])
     });
+
+    it("are indexed correctly", function() {
+      expect(paredit.parse("(xx ;foo\n())"))
+        .to.containSubset({
+          errors: [],start: 0,end: 12,type: "toplevel",
+          children: [{
+            close: ")",open: "(",start: 0,end: 12,type: "list",
+            children: [
+              {start: 1,end: 3,type: "symbol"},
+              {start: 4,end: 8,type: "comment"},
+              {children: [], close: ")",open: "(",start: 9,end: 11,type: "list"}]
+          }]
+        })
+    });
   });
 
   describe("macro syntax", function() {
