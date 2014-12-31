@@ -21,49 +21,19 @@ describe('paredit editor', function() {
 
   describe("splitting", function() {
     it("(|)->()|()", function() {
-      var ast = parse("()"),
-          actual = ed.splitSexp(ast, 1),
-          expected = {
-            start: 0, end: 4, errors: [], type: "toplevel",
-            children: [
-              {start: 0,end: 2, children: [], type: "list"},
-              {start: 2,end: 4, children: [], type: "list"}]
-          };
-      expect(actual.ast).to.containSubset(expected, d(actual));
-      expect(actual.ast).to.not.equal(ast); // no identity
-      expect(actual.changes).deep.equals([
-        ['insert', 1, ")("]
-      ]);
+      var actual = ed.splitSexp(parse("()"), 1);
+      expect(actual.changes).deep.equals([['insert', 1, ")("]]);
       expect(actual.newIndex).equals(2);
     });
 
     it("(|foo)->()|(foo), updates child indexes", function() {
-      var actual = ed.splitSexp(parse("(foo)"), 1),
-          expected = {
-            start: 0, end: 7, errors: [], type: "toplevel",
-            children: [
-              {start: 0,end: 2, children: [], type: "list"},
-              {start: 2,end: 7, children: [{start:3,end:6}]}]
-          };
-      expect(actual.ast).to.containSubset(expected, d(actual));
-    });
-
-    it("(|)(bar)->()()(bar), updates following indexes", function() {
-      var actual = ed.splitSexp(parse("()(bar)"), 1),
-          expected = {
-            start: 0, end: 9, errors: [], type: "toplevel",
-            children: [
-              {start: 0,end: 2, children: [], type: "list"},
-              {start: 2,end: 4, children: [], type: "list"},
-              {start: 4,end: 9, children: [{start:5,end:8}]}]
-          };
-      expect(actual.ast).to.containSubset(expected, d(actual));
+      var actual = ed.splitSexp(parse("(foo)"), 1);
+      expect(actual.changes).deep.equals([['insert', 1, ")("]]);
     });
 
     it("[|]->[][], uses correct paren for change", function() {
-      var actual = ed.splitSexp(parse("[]"), 1),
-          expected = [["insert", 1, "]["]];
-      expect(actual.changes).to.containSubset(expected, d(actual));
+      var actual = ed.splitSexp(parse("[]"), 1);
+      expect(actual.changes).to.deep.equal([["insert", 1, "]["]], d(actual));
     })
   });
 
