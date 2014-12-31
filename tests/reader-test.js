@@ -269,11 +269,11 @@ describe("parsing access", function() {
       type: "toplevel", start: 0, end: 21,
       errors: [],
       children: [
-        {start: 0,end: 21, type: "list",
+        {start: 0,end: 21, type: "list", open: '(', close: ')',
          children: [
           {end: 4, start: 1, source: "aaa", type: "symbol"},
           {end: 8, start: 5, source: "bbb", type: "symbol"},
-          {start: 9, end: 20, type: "list",
+          {start: 9, end: 20, type: "list", open: '[', close: ']',
            children: [
              {end: 12, start: 10, source: "cc", type: "symbol"},
              {end: 17, start: 13, source: "dddd", type: "symbol"},
