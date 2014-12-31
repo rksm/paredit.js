@@ -17,6 +17,8 @@ var parse = function(src) {
   return paredit.parse(src, {addSourceForLeafs: true});
 };
 
+function times(n, ch) { return new Array(n+1).join(ch); }
+
 describe('paredit editor', function() {
 
   describe("splitting", function() {
@@ -37,4 +39,42 @@ describe('paredit editor', function() {
     })
   });
 
+  describe("rewrite ast", function() {
+    it("replaces nodes and constructs new ast", function() {
+      var ast = parse("(a (c d) d) e"),
+          target = ast.children[0].children[1].children[0], // c
+          replacement = [{start: 4,end: 7,source: "ccc",type: "symbol"}],
+          actual = ed.rewrite(ast, target, replacement),
+          expected = parse("(a (ccc d) d) e");
+      expect(actual).to.containSubset(expected, d(actual));
+    });
+  });
+
+  describe("indentation", function() {
+    
+    it("indents sexp parts on newline", function() {
+      var src = "(foo\nbar)";
+      var actual = ed.indentRange(parse(src), src, 6,6);
+      expect(actual.changes).to.deep.equal([["insert", 5, " "]], d(actual.changes));
+    });
+
+    it("indents multiple lines", function() {
+      var src = "(foo\nbar\n    baz)";
+      var actual = ed.indentRange(parse(src), src, 6,15);
+      var expected = [
+        ["insert", 5, " "],
+        ["remove", 10/*!not 9 since change of prev line*/, 3]]
+      expect(actual.changes).to.deep.equal(expected, d(actual.changes));
+    })
+
+    it("indents according to parent list", function() {
+      var src = "  (foo bar\n      baz)";
+      
+      
+      var actual = ed.indentRange(parse(src), src, 17,17);
+      var expected = [
+        ["insert", 11, times("  (foo ".length - "      ".length, " ")]];
+      expect(actual.changes).to.deep.equal(expected, d(actual.changes));
+    })
+  });
 });
