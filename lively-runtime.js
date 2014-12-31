@@ -11,8 +11,10 @@ lively.require("lively.lang.Runtime").toRun(function() {
       var files = ["./index.js",
                    "./lib/reader.js",
                    "./lib/navigator.js",
+                   "./lib/editor.js",
                    "./tests/reader-test.js",
-                   "./tests/navigator-test.js"
+                   "./tests/navigator-test.js",
+                   "./tests/editor-test.js"
                    ];
 
       lively.lang.fun.composeAsync(

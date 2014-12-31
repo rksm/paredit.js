@@ -8,6 +8,7 @@
   if (isNodejs) {
     exports.reader = module.require("./lib/reader").reader;
     exports.navigator = module.require("./lib/navigator").navigator;
+    exports.editor = module.require("./lib/editor").editor;
   }
 
   exports.parse = function(src, options) {

@@ -8,45 +8,31 @@ if (isNodejs) {
   var chai = module.require('chai');
   chai.use(module.require('chai-subset'));
   expect = chai.expect;
-  i = module.require("immutable");
-} else { expect = window.chai.expect; i = window.Immutable; }
+} else { expect = window.chai.expect; }
 
 var d = typeof lively !== "undefined" ? lively.lang.obj.inspect : console.dir;
 
-var testSource1 = "(aaa bbb [cc dddd e])";
-var testSource2 = "(defn foo\n"
-                + "  \"documentation\n"
-                + "   string\"\n"
-                + "  [^String s]\n"
-                + "  (let [a (XXX. yyy bbb)] ; comment\n"
-                + "    (bb ccc a (+ ddd 23 \"foo\"))))\n";
-
-function dummyEdit(source) {
-  return {
-    session: {doc: {}}
-  }
-}
-
 var nav = paredit.navigator;
+
 var parse = function(src) {
   return paredit.parse(src, {addSourceForLeafs: true});
 };
 
 describe('paredit navigator', function() {
 
-  var ast1 = parse("(aaa bbb [cc dddd e]) ()");
+  var ast = parse("(aaa bbb [cc dddd e]) ()");
 
   describe("basic movements", function() {
     
     describe("forwardSexp", function() {
 
       it("|(...)->(...)|", function() {
-        expect(nav.forwardSexp(ast1, 0)).eq(21);
-        expect(nav.forwardSexp(ast1, 1)).eq(4);
+        expect(nav.forwardSexp(ast, 0)).eq(21);
+        expect(nav.forwardSexp(ast, 1)).eq(4);
       });
 
       it("| (...)->(...)|", function() { 
-        expect(nav.forwardSexp(ast1, 4)).eq(8);
+        expect(nav.forwardSexp(ast, 4)).eq(8);
       });
 
     });
@@ -54,13 +40,13 @@ describe('paredit navigator', function() {
     describe("backwardSexp", function() {
 
       it("(...)|->|(...)", function() {
-        expect(nav.backwardSexp(ast1, 24)).eq(22);
-        expect(nav.backwardSexp(ast1, 21)).eq(0);
-        expect(nav.backwardSexp(ast1, 4)).eq(1);
+        expect(nav.backwardSexp(ast, 24)).eq(22);
+        expect(nav.backwardSexp(ast, 21)).eq(0);
+        expect(nav.backwardSexp(ast, 4)).eq(1);
       });
 
       it("(...) |->|(...)", function() { 
-        expect(nav.backwardSexp(ast1, 5)).eq(1);
+        expect(nav.backwardSexp(ast, 5)).eq(1);
       });
 
     });
@@ -68,9 +54,9 @@ describe('paredit navigator', function() {
     describe("forwardDown", function() {
 
       it("|(...)->(|...)", function() {
-        expect(nav.forwardDownSexp(ast1, 0)).eq(1);
-        expect(nav.forwardDownSexp(ast1, 1)).eq(10);
-        expect(nav.forwardDownSexp(ast1, 22)).eq(23);
+        expect(nav.forwardDownSexp(ast, 0)).eq(1);
+        expect(nav.forwardDownSexp(ast, 1)).eq(10);
+        expect(nav.forwardDownSexp(ast, 22)).eq(23);
       });
 
     });
@@ -78,9 +64,9 @@ describe('paredit navigator', function() {
     describe("backwardUp", function() {
 
       it("(..|.)->|(...)", function() {
-        expect(nav.backwardUpSexp(ast1, 8)).eq(0);
-        expect(nav.backwardUpSexp(ast1, 15)).eq(9);
-        expect(nav.backwardUpSexp(ast1, 21)).eq(21);
+        expect(nav.backwardUpSexp(ast, 8)).eq(0);
+        expect(nav.backwardUpSexp(ast, 15)).eq(9);
+        expect(nav.backwardUpSexp(ast, 21)).eq(21);
       });
 
     });
