@@ -78,7 +78,6 @@ describe('paredit editor', function() {
 
     it("recognizes special forms", function() {
       var src = "(defn foo\n[]\n(let []\na))"
-      debugger;;
       var actual = ed.indentRange(parse(src), src, 1,23);
       var expected = [
         ["insert",10,"  "],
