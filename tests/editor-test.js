@@ -19,6 +19,11 @@ var parse = function(src) {
 
 function times(n, ch) { return new Array(n+1).join(ch); }
 
+function expectIndent(src, expected) {
+  var actual = ed.indentRange(parse(src), src, 0,src.length);
+  expect(actual.src).to.eql(expected);
+}
+
 describe('paredit editor', function() {
 
   describe("splitting", function() {
@@ -85,11 +90,20 @@ describe('paredit editor', function() {
       expect(actual.changes).to.deep.equal(expected, d(actual.changes));
     });
 
+    it("updates ast for empty form", function() {
+      var src = "(\n)";
+      var actual = ed.indentRange(parse(src), src, 1,src.length);
+      var expected = {type: "toplevel", children: [{start: 0, end:4}]};
+      expect(actual.ast).to.containSubset(expected, d(actual.ast));
+
+    });
+
     it("indents special forms correctly", function() {
-      var src = "(defn\nx\ny)";
-      var expected = "(defn\n  x\n  y)";
-      var actual = ed.indentRange(parse(src), src, 0,src.length);
-      expect(actual.src).to.eql(expected);
+      expectIndent("(defn\nx\ny)", "(defn\n  x\n  y)");
+    });
+
+    it("indents multiple toplevel sexps at once", function() {
+      expectIndent("(\n)\n(\n)", "(\n )\n(\n )");
     });
 
   });
