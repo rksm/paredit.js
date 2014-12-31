@@ -75,7 +75,6 @@ describe('paredit editor', function() {
       expect(actual.changes).to.deep.equal(expected, d(actual.changes));
     });
 
-
     it("recognizes special forms", function() {
       var src = "(defn foo\n[]\n(let []\na))"
       var actual = ed.indentRange(parse(src), src, 1,23);
@@ -85,5 +84,13 @@ describe('paredit editor', function() {
         ["insert",25,"    "]];
       expect(actual.changes).to.deep.equal(expected, d(actual.changes));
     });
+
+    it("indents special forms correctly", function() {
+      var src = "(defn\nx\ny)";
+      var expected = "(defn\n  x\n  y)";
+      var actual = ed.indentRange(parse(src), src, 0,src.length);
+      expect(actual.src).to.eql(expected);
+    });
+
   });
 });
