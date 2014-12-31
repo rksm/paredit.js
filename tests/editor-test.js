@@ -20,7 +20,7 @@ var parse = function(src) {
 describe('paredit editor', function() {
 
   describe("splitting", function() {
-    it("(|)->()()", function() {
+    it("(|)->()|()", function() {
       var ast = parse("()"),
           actual = ed.splitSexp(ast, 1),
           expected = {
@@ -33,10 +33,11 @@ describe('paredit editor', function() {
       expect(actual.ast).to.not.equal(ast); // no identity
       expect(actual.changes).deep.equals([
         ['insert', 1, ")("]
-      ])
+      ]);
+      expect(actual.newIndex).equals(2);
     });
 
-    it("(|foo)->()(foo), updates child indexes", function() {
+    it("(|foo)->()|(foo), updates child indexes", function() {
       var actual = ed.splitSexp(parse("(foo)"), 1),
           expected = {
             start: 0, end: 7, errors: [], type: "toplevel",
