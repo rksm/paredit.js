@@ -69,12 +69,22 @@ describe('paredit editor', function() {
 
     it("indents according to parent list", function() {
       var src = "  (foo bar\n      baz)";
-      
-      
       var actual = ed.indentRange(parse(src), src, 17,17);
       var expected = [
         ["insert", 11, times("  (foo ".length - "      ".length, " ")]];
       expect(actual.changes).to.deep.equal(expected, d(actual.changes));
-    })
+    });
+
+
+    it("recognizes special forms", function() {
+      var src = "(defn foo\n[]\n(let []\na))"
+      debugger;;
+      var actual = ed.indentRange(parse(src), src, 1,23);
+      var expected = [
+        ["insert",10,"  "],
+        ["insert",15,"  "],
+        ["insert",25,"    "]];
+      expect(actual.changes).to.deep.equal(expected, d(actual.changes));
+    });
   });
 });
