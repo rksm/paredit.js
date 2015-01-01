@@ -112,9 +112,15 @@ describe('reading sexps', function() {
   });
 
   describe("comments", function() {
+
     it("aren't ignored", function() {
       expect(readSeq("; foo\n(baz ;; bar  \n  zork)"))
         .deep.equals(["; foo\n", ["baz", ";; bar  \n", "zork"]])
+    });
+
+    it("multiple lines are merged", function() {
+      expect(readSeq("; foo\n  ; bar\n  a"))
+        .deep.equals(["; foo\n  ; bar\n", "a"])
     });
 
     it("are indexed correctly", function() {
@@ -125,7 +131,7 @@ describe('reading sexps', function() {
             close: ")",open: "(",start: 0,end: 12,type: "list",
             children: [
               {start: 1,end: 3,type: "symbol"},
-              {start: 4,end: 8,type: "comment"},
+              {start: 4,end: 9,type: "comment"},
               {children: [], close: ")",open: "(",start: 9,end: 11,type: "list"}]
           }]
         })
@@ -280,7 +286,7 @@ describe('reading sexps', function() {
 });
 
 describe("parsing access", function() {
-  
+
   it("can parse code into an AST", function() {
     var ast = paredit.parse(
       "(aaa bbb [cc dddd e])",
