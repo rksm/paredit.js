@@ -13,7 +13,7 @@ if (isNodejs) {
 function pos(i,r,c) { return {idx: i, row: r, column: c}; };
 function printPos(p) { return p.idx + ":" + p.row + ":" + p.column; }
 
-var d = typeof lively !== "undefined" ? lively.lang.obj.inspect : console.dir;
+var d = typeof lively !== "undefined" ? lively.lang.obj.inspect : JSON.stringify;
 
 describe('reading sexps', function() {
 
@@ -76,7 +76,13 @@ describe('reading sexps', function() {
       expect(readSexp('"fo\\"oo"')).eq('"fo\\"oo"');
     });
 
-  })
+  });
+
+  describe("chars", function() {
+    it("reads chars", function() {
+      expect(readSeq('\\]')).deep.eq(["\\]"], d(readSeq('\\]')));
+    });
+  });
 
   describe("numbers", function() {
     it("reads number value", function() {
