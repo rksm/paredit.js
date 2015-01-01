@@ -14,17 +14,20 @@
 
     <script type="text/javascript">
       mocha.setup("bdd");
-      var urls = [
-        '../index.js',
-        '../lib/reader.js',
-        '../lib/navigator.js',
-        '../lib/editor.js',
-        '../lib/ace.js',
+      var bundled = document.location.search.indexOf("bundled=true") > -1;
+      var lib = bundled ? ["../paredit-bundle.min.js"] :
+        ['../index.js',
+         '../lib/util.js',
+         '../lib/reader.js',
+         '../lib/navigator.js',
+         '../lib/editor.js',
+         '../lib/ace.js'];
+      var tests = [
         "reader-test.js",
         "navigator-test.js",
         "editor-test.js"
       ];
-      loadUncached(urls, function() {
+      loadUncached(lib.concat(tests), function() {
         mocha.checkLeaks();
         if (window.mochaPhantomJS) mochaPhantomJS.run();
         else mocha.run();
