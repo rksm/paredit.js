@@ -13,7 +13,7 @@ if (isNodejs) {
 function pos(i,r,c) { return {idx: i, row: r, column: c}; };
 function printPos(p) { return p.idx + ":" + p.row + ":" + p.column; }
 
-var d = typeof lively !== "undefined" ? lively.lang.obj.inspect : JSON.stringify;
+var d = JSON.stringify;
 
 describe('reading sexps', function() {
 

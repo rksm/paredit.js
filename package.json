@@ -10,10 +10,7 @@
     "paredit",
     "lisp"
   ],
-  "dependencies": {
-    "lively.lang": "*",
-    "immutable": "*"
-  },
+  "dependencies": {},
   "devDependencies": {
     "chai": "^1.10.0",
     "chai-subset": "^0.3.0",

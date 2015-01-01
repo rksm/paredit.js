@@ -9,6 +9,7 @@ lively.require("lively.lang.Runtime").toRun(function() {
       // var project = r.Registry.default().projects["paredit-js"];
       // project.reloadAll(project, function(err) { err ? show(err.stack || String(err)) : alertOK("reloaded!"); })
       var files = ["./index.js",
+                   './lib/util.js',
                    "./lib/reader.js",
                    "./lib/navigator.js",
                    "./lib/editor.js",
@@ -21,19 +22,9 @@ lively.require("lively.lang.Runtime").toRun(function() {
       lively.lang.fun.composeAsync(
         function livelyDeps(n) {
           require("lively.MochaTests").toRun(function() {
-            project.state = {lively: lively, window: {chai: window.chai, Immutable: null}};
+            project.state = {window: {chai: window.chai}};
             n();
           });
-        },
-        function immutable(n) {
-          JSLoader.loadJs("https://cdnjs.cloudflare.com/ajax/libs/immutable/3.4.1/immutable.js");
-          lively.lang.fun.waitFor(2000,
-            function() { return !!window.Immutable; },
-            function(err) {
-              err && show("timeout loading Immutable!");
-              project.state.window.Immutable = window.Immutable;
-              n();
-            });
         },
         function readFiles(n) {
           lively.lang.arr.mapAsyncSeries(files,

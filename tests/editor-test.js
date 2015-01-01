@@ -10,7 +10,7 @@ if (isNodejs) {
   expect = chai.expect;
 } else { expect = window.chai.expect; }
 
-var d = typeof lively !== "undefined" ? lively.lang.obj.inspect : console.dir;
+var d = JSON.stringify;
 
 var ed = paredit.editor;
 var parse = function(src) {
