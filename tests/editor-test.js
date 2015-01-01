@@ -25,7 +25,7 @@ function expectIndent(src, expected) {
 }
 
 function expectChangesAndIndex(actual, changes, idx) {
-  expect(actual.changes).to.deep.eq(changes, d(changes));
+  expect(actual.changes).to.deep.eq(changes, d(actual.changes));
   expect(actual.newIndex).equals(idx);
 }
 
@@ -33,18 +33,18 @@ describe('paredit editor', function() {
 
   describe("splitting", function() {
     it("(|)->()| ()", function() {
-      var actual = ed.splitSexp(parse("()"), 1);
+      var actual = ed.splitSexp(parse("()"), "()", 1);
       expect(actual.changes).deep.equals([['insert', 1, ") ("]]);
       expect(actual.newIndex).equals(2);
     });
 
     it("(|foo)->()| (foo), updates child indexes", function() {
-      var actual = ed.splitSexp(parse("(foo)"), 1);
+      var actual = ed.splitSexp(parse("(foo)"), "(foo)", 1);
       expect(actual.changes).deep.equals([['insert', 1, ") ("]]);
     });
 
     it("[|]->[]| [], uses correct paren for change", function() {
-      var actual = ed.splitSexp(parse("[]"), 1);
+      var actual = ed.splitSexp(parse("[]"), "[]", 1);
       expect(actual.changes).to.deep.equal([["insert", 1, "] ["]], d(actual));
     })
   });
@@ -53,7 +53,7 @@ describe('paredit editor', function() {
 
     it("(|)->((|))", function() {
       expectChangesAndIndex(
-        ed.wrapAround(parse("()"), 1, '(', ')'),
+        ed.wrapAround(parse("()"), "()", 1, '(', ')'),
         [['insert', 1, "("],
          ['insert', 2, ")"]],
         2);
@@ -61,18 +61,84 @@ describe('paredit editor', function() {
 
     it("|a->(|a)", function() {
       expectChangesAndIndex(
-        ed.wrapAround(parse("a"), 0, '(', ')'),
+        ed.wrapAround(parse("a"), "a", 0, '(', ')'),
         [['insert', 0, "("],
          ['insert', 2, ")"]], 1);
     });
     
     it("|a bb->(|a bb)", function() {
       expectChangesAndIndex(
-        ed.wrapAround(parse("a bb"), 0, '(', ')', 2),
+        ed.wrapAround(parse("a bb"), "a bb", 0, '(', ')', {count: 2}),
         [['insert', 0, "("],
          ['insert', 5, ")"]], 1);
     });
 
+  });
+
+  describe("splice", function() {
+    it("(aa| bb)->aa| bb", function() {
+      expectChangesAndIndex(
+        ed.spliceSexp(parse("(aa bb)"), "(aa bb)", 3),
+        [['remove', 6, 1],
+         ['remove', 0, 1]],
+        2);
+    });
+  });
+
+  describe("closeAndNewline", function() {
+    it(" (aa| bb)-> (aa bb)\n |", function() {
+      expectChangesAndIndex(
+        ed.closeAndNewline(parse(" (aa bb)"), " (aa bb)", 4),
+        [['insert', 8, "\n "]], 10);
+    });
+    it("[(aa| bb)]->[(aa bb)]\n|", function() {
+      expectChangesAndIndex(
+        ed.closeAndNewline(parse("[(aa bb)]"), "[(aa bb)]", 4, ']'),
+        [['insert', 9, "\n"]], 10);
+    });
+  });
+
+  describe("barfSexp", function() {
+    it("backward: (foo (bar baz |quux) zot)->(foo bar (baz |quux) zot)", function() {
+      expectChangesAndIndex(
+        ed.barfSexp(parse("(foo (bar baz quux) zot)"), "(foo (bar baz quux) zot)", 14, {backward: true}),
+        [['insert', 10, '('],
+         ['remove', 5, 1]], 14);
+    });
+    it("forward: (foo (bar baz |quux) zot)->(foo (bar baz |) zot)", function() {
+      expectChangesAndIndex(
+        ed.barfSexp(parse("(foo (bar baz quux) zot)"), "(foo (bar baz quux) zot)", 14, {backward: false}),
+        [['remove', 18, 1],
+         ['insert', 14, ')']], 14);
+    });
+  });
+  
+  describe("slurpSexp", function() {
+    it("forward: (a (a |b) c d)->(a (a |b c d))", function() {
+      expectChangesAndIndex(
+        ed.slurpSexp(parse("(a (a b) c d)"), "(a (a b) c d)", 6, {backward: false, count: 2}),
+        [['insert', 12, ')'],
+         ['remove', 7, 1]], 6);
+    });
+    it("backward: (x y z (a |b) c d)->(x (y z a |b c d))", function() {
+      expectChangesAndIndex(
+        ed.slurpSexp(parse("(x y z (a b) c d)"), "(x y z (a b) c d)", 10, {backward: true, count: 2}),
+        [['remove', 7, 1],
+        ['insert', 3, '(']], 10);
+    });
+  });
+
+  describe("killSexp", function() {
+    it("forward: (a |b c d)->(a | d)", function() {
+      expectChangesAndIndex(
+        ed.killSexp(parse("(a b c d)"), "(a b c d)", 3, {backward: false, count: 2}),
+        [['remove', 3, 3]], 3);
+    });
+    it("backward: (a |b c d)->(a | d)", function() {
+      expectChangesAndIndex(
+        ed.killSexp(parse("(a b c d)"), "(a b c d)", 3, {backward: true, count: 2}),
+        [['remove', 1, 2]], 1);
+    });
   });
 
   describe("rewrite ast", function() {
