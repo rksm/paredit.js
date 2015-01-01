@@ -46,7 +46,14 @@ describe('paredit editor', function() {
     it("[|]->[]| [], uses correct paren for change", function() {
       var actual = ed.splitSexp(parse("[]"), "[]", 1);
       expect(actual.changes).to.deep.equal([["insert", 1, "] ["]], d(actual));
-    })
+    });
+    
+    describe("strings", function() {
+      it('"fo|o"->"fo"| "o"', function() {
+        var actual = ed.splitSexp(parse('"foo"'), '"foo"', 3);
+        expectChangesAndIndex(actual, [["insert", 3, '" "']], 4);
+      });
+    });
   });
 
   describe("wrap around", function() {
