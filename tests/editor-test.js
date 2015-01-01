@@ -24,24 +24,55 @@ function expectIndent(src, expected) {
   expect(actual.src).to.eql(expected);
 }
 
+function expectChangesAndIndex(actual, changes, idx) {
+  expect(actual.changes).to.deep.eq(changes, d(changes));
+  expect(actual.newIndex).equals(idx);
+}
+
 describe('paredit editor', function() {
 
   describe("splitting", function() {
-    it("(|)->()|()", function() {
+    it("(|)->()| ()", function() {
       var actual = ed.splitSexp(parse("()"), 1);
-      expect(actual.changes).deep.equals([['insert', 1, ")("]]);
+      expect(actual.changes).deep.equals([['insert', 1, ") ("]]);
       expect(actual.newIndex).equals(2);
     });
 
-    it("(|foo)->()|(foo), updates child indexes", function() {
+    it("(|foo)->()| (foo), updates child indexes", function() {
       var actual = ed.splitSexp(parse("(foo)"), 1);
-      expect(actual.changes).deep.equals([['insert', 1, ")("]]);
+      expect(actual.changes).deep.equals([['insert', 1, ") ("]]);
     });
 
-    it("[|]->[][], uses correct paren for change", function() {
+    it("[|]->[]| [], uses correct paren for change", function() {
       var actual = ed.splitSexp(parse("[]"), 1);
-      expect(actual.changes).to.deep.equal([["insert", 1, "]["]], d(actual));
+      expect(actual.changes).to.deep.equal([["insert", 1, "] ["]], d(actual));
     })
+  });
+
+  describe("wrap around", function() {
+
+    it("(|)->((|))", function() {
+      expectChangesAndIndex(
+        ed.wrapAround(parse("()"), 1, '(', ')'),
+        [['insert', 1, "("],
+         ['insert', 2, ")"]],
+        2);
+    });
+
+    it("|a->(|a)", function() {
+      expectChangesAndIndex(
+        ed.wrapAround(parse("a"), 0, '(', ')'),
+        [['insert', 0, "("],
+         ['insert', 2, ")"]], 1);
+    });
+    
+    it("|a bb->(|a bb)", function() {
+      expectChangesAndIndex(
+        ed.wrapAround(parse("a bb"), 0, '(', ')', 2),
+        [['insert', 0, "("],
+         ['insert', 5, ")"]], 1);
+    });
+
   });
 
   describe("rewrite ast", function() {
