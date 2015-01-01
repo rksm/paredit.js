@@ -14,9 +14,10 @@ Reference:
 ## This library
 
 paredit.js allows general navigation and transformation of s-expressions,
-independent of a specific editor implementation.
+independent of a specific editor implementation. Pluck it into your editor of
+choice.
 
 # LICENSE
 
-MIT
+(MIT)[https://github.com/rksm/paredit.js/blob/master/LICENSE]
 
