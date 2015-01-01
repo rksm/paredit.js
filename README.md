@@ -19,5 +19,4 @@ choice.
 
 # LICENSE
 
-(MIT)[https://github.com/rksm/paredit.js/blob/master/LICENSE]
-
+[MIT](https://github.com/rksm/paredit.js/blob/master/LICENSE)
