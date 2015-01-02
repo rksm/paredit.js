@@ -148,6 +148,20 @@ describe('paredit editor', function() {
     });
   });
 
+  describe("deletion", function() {
+    it("deletes non list-like things: (abc|)->(a|)", function() {
+      expectChangesAndIndex(
+        ed.delete(parse("(abc)"), "(abc)", 4, {backward: true, count: 2}),
+        [['remove', 2, 2]], 2);
+    });
+
+    it("does not delete forward ad end of list: (abc|)->(abc|)", function() {
+      expectChangesAndIndex(
+        ed.delete(parse("(abc)"), "(abc)", 4, {backward: false, count: 2}),
+        [], 4);
+    });
+  });
+
   describe("rewrite ast", function() {
     it("replaces nodes and constructs new ast", function() {
       var ast = parse("(a (c d) d) e"),
