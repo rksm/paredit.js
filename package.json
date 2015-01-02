@@ -8,7 +8,10 @@
   },
   "keywords": [
     "paredit",
-    "lisp"
+    "lisp",
+    "clojure",
+    "code editor",
+    "programming"
   ],
   "dependencies": {},
   "devDependencies": {
@@ -24,8 +27,7 @@
       "lib/util.js",
       "lib/reader.js",
       "lib/navigator.js",
-      "lib/editor.js",
-      "lib/ace.js"
+      "lib/editor.js"
     ]
   },
   "author": "Robert Krahn",
