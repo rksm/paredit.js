@@ -160,6 +160,33 @@ describe('paredit editor', function() {
         ed.delete(parse("(abc)"), "(abc)", 4, {backward: false, count: 2}),
         [], 4);
     });
+
+    it("deletes empty lists backward: (|)->|", function() {
+      expectChangesAndIndex(
+        ed.delete(parse("()"), "()", 1, {backward: true}),
+        [['remove', 0, 2]], 0);
+    });
+    it("deletes empty lists backward but only at begining: ( |)->(|)", function() {
+      expectChangesAndIndex(
+        ed.delete(parse("( )"), "( )", 2, {backward: true}),
+        [['remove', 1, 1]], 1);
+    });
+    it("deletes empty lists forward: (|)->|", function() {
+      expectChangesAndIndex(
+        ed.delete(parse("()"), "()", 1, {backward: false}),
+        [['remove', 0, 2]], 0);
+    });
+    it("deletes empty lists forward on toplevel: |()->|", function() {
+      expectChangesAndIndex(
+        ed.delete(parse("()"), "()", 0, {backward: false}),
+        [['remove', 0, 2]], 0);
+    });
+
+    it('deletes empty strings: "|"->|', function() {
+      expectChangesAndIndex(
+        ed.delete(parse('""'), '""', 1, {backward: false}),
+        [['remove', 0, 2]], 0);
+    });
   });
 
   describe("rewrite ast", function() {
