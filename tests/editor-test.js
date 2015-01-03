@@ -27,7 +27,9 @@ function expectIndent(src, expected) {
 function expectChangesAndIndex(actual, changes, idx) {
   if (!changes) expect(actual).to.eq(null,d(actual));
   else expect(actual.changes).to.deep.eq(changes, d(actual.changes));
-  if (typeof idx == "number") expect(actual.newIndex).equals(idx);
+  if (typeof idx == "number") {
+    expect(actual.newIndex).equals(idx);
+  }
 }
 
 function edit(methodName/*,args*/) {
@@ -66,25 +68,6 @@ function edit(methodName/*,args*/) {
       
     },
   }
-}
-function itTransforms(title, fromTo, method, args, changes) {
-  if (typeof changes === "undefined") {
-    changes = args; args = method; method = fromTo; fromTo = title;
-    title = undefined;
-  }
-  var from = fromTo.split("->")[0];
-  var to = fromTo.split("->")[1];
-  title = (title ? title+":" : "") + from + "->" + to;
-  return it(title, function() {
-    var src = from.replace(/\|/, "");
-    var idx = from.indexOf("|");
-    if (idx === -1) throw new Error("need from index! -> |");
-    var newIdx = to.indexOf("|");
-    if (newIdx === -1) newIdx = undefined;
-    expectChangesAndIndex(
-      ed[method](parse(src), src, idx, args),
-      changes, newIdx);
-  });
 }
 
 describe('paredit editor', function() {
@@ -274,24 +257,19 @@ describe('paredit editor', function() {
   });
 
   describe("transpose", function() {
-    it("(xxx |yyy)->(xxx yyy|)", function() {
-      expectChangesAndIndex(
-        ed.transpose(parse("(xxx yyy)"), "(xxx yyy)", 5, {}),
-        [['insert', 8, " xxx"],
-         ['remove', 1, 4]], 8);
-    });
-    it("((a)|(b))->((a) (b)|)", function() {
-      expectChangesAndIndex(
-        ed.transpose(parse("((a)(b))"), "((a)(b))", 4, {}),
-        [['insert', 7, " (a)"],
-         ['remove', 1, 3]], 8);
-    });
-    it("(|yyy)->(|yyy)", function() {
-      expectChangesAndIndex(ed.transpose(parse("(yyy)"), "(yyy)", 1, {}), null);
-    });
-    it("( | )->( | )", function() {
-      expectChangesAndIndex(ed.transpose(parse("(  )"), "(  )", 2, {}), null);
-    });
+
+    edit("transpose",{})
+      .transforms("(xxx |yyy)->(xxx yyy|)")
+      .withChanges([['insert', 8, " xxx"],['remove', 1, 4]]);
+
+    edit("transpose",{})
+      .transforms("((a)|(b))->((a) (b)|)")
+      .withChanges([['insert', 7, " (a)"],['remove', 1, 3]]);
+
+    edit("transpose",{}).transforms("(|yyy)->(yyy)").withChanges(null);
+
+    edit("transpose",{}).transforms("( | )->(  )").withChanges(null);
+
   });
 
   describe("rewrite ast", function() {
@@ -306,7 +284,7 @@ describe('paredit editor', function() {
   });
 
   describe("indentation", function() {
-    
+
     it("indents sexp parts on newline", function() {
       var src = "(foo\nbar)";
       var actual = ed.indentRange(parse(src), src, 6,6);
@@ -331,21 +309,11 @@ describe('paredit editor', function() {
     });
 
     it("recognizes special forms", function() {
-      var src = "(defn foo\n[]\n(let []\na))"
-      var actual = ed.indentRange(parse(src), src, 1,23);
-      var expected = [
-        ["insert",10,"  "],
-        ["insert",15,"  "],
-        ["insert",25,"    "]];
-      expect(actual.changes).to.deep.equal(expected, d(actual.changes));
+      expectIndent("(defn foo\n[]\n(let []\na))", "(defn foo\n  []\n  (let []\n    a))");
     });
 
     it("updates ast for empty form", function() {
-      var src = "(\n)";
-      var actual = ed.indentRange(parse(src), src, 1,src.length);
-      var expected = {type: "toplevel", children: [{start: 0, end:4}]};
-      expect(actual.ast).to.containSubset(expected, d(actual.ast));
-
+      expectIndent("(\n)", "(\n )");
     });
 
     it("indents special forms correctly", function() {
