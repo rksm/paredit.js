@@ -13,7 +13,8 @@
 
   exports.parse = function(src, options) {
     options = options || {};
-    var addSrc = !!options.addSourceForLeafs;
+    var addSrc = options.hasOwnProperty('addSourceForLeafs') ?
+       options.addSourceForLeafs : true;
     var errors = [];
     
     var nodes = exports.reader.readSeq(src, function xform(type, read, start, end, args) {
@@ -507,6 +508,11 @@
           return n.source ? n.source :
             util.times(node.end-node.start, 'x'); },
         function(n) { return (n && n.children) || []; });
+    },
+
+    source: function(src, node) {
+      return node.source ? node.source :
+        src.slice(node.start,node.end);
     }
 
   }
@@ -573,15 +579,62 @@
     spliceSexp: function(ast, src, idx) {
       var sexps = w.containingSexpsAt(ast,idx,w.hasChildren);
       if (!sexps.length) return null;
-      var sexp = sexps.pop();
-      if (sexp.type === "toplevel") return;
+      var parent = sexps.pop();
+      var onTop = parent.type === "toplevel";
 
-      // we are dealing with a list split
-      var newIndex = idx-sexp.open.length,
-          changes = [['remove', sexp.end-1, sexp.close.length],
-                     ['remove', sexp.start, sexp.open.length]];
+      var insideSexp = parent.children.filter(function(n) {
+        return n.start < idx && idx < n.end; })[0];
+      var insideString = insideSexp && insideSexp.type === 'string';
+
+
+      var changes = [], newIndex = idx;
+
+      if (!onTop) changes.push(['remove', parent.end-1, parent.close.length]);
+      if (insideString) {
+        changes.push(['remove', insideSexp.end-1, insideSexp.close.length]);
+        changes.push(['remove', insideSexp.start, insideSexp.open.length]);
+        newIndex -= insideSexp.open.length;
+      }
+      if (!onTop) {
+        changes.push(['remove', parent.start, parent.open.length]);
+        newIndex -= parent.open.length;
+      }
 
       return {changes: changes, newIndex: newIndex};
+    },
+
+    spliceSexpKill: function(ast, src, idx, args) {
+      args = args || {}
+      var count = args.count || 1;
+      var backward = args.backward;
+
+      var sexps = w.containingSexpsAt(ast,idx,w.hasChildren);
+      if (!sexps.length) return null;
+
+      if (backward) {
+        var left = leftSiblings(last(sexps), idx);
+        var killed = this.killSexp(ast, src, idx/*last(left).end*/,
+          {count: left.length, backward: true})
+      } else {
+        var right = rightSiblings(last(sexps), idx);
+        var killed = this.killSexp(ast, src, idx/*last(right).end*/,
+          {count: right.length, backward: false})
+      }
+
+      var spliced = this.spliceSexp(ast,src,idx);
+
+      if (!killed) return spliced;
+      if (!spliced) return killed;
+
+      var changes = Array.prototype.slice.call(spliced.changes);
+      if (changes.length === 2) changes.splice(1,0,killed.changes[0])
+      else if (changes.length === 4) changes.splice(2,0,killed.changes[0])
+
+      return {
+        changes: changes,
+        newIndex: killed.newIndex-(changes.length === 3 ? 1 : 2)
+      }
+
     },
 
     splitSexp: function(ast, src, idx) {
@@ -605,6 +658,31 @@
       var sexps = w.containingSexpsAt(ast,idx, w.hasChildren);
       if (!sexps.length) return null;
       var parent = sexps.pop();
+
+      var insideSexp = parent.children.filter(function(n) {
+        return n.start < idx && idx < n.end; })[0];
+
+      if (insideSexp) {
+        var from = backward ? insideSexp.start : idx;
+        var to = backward ? idx : insideSexp.end;
+        if (insideSexp.type === 'string') {
+          from += backward ? insideSexp.open.length : 0;
+          to += backward ? 0 : -insideSexp.close.length;
+        }
+        return {
+          changes: [['remove', from, to-from]],
+          newIndex: from
+        }
+      }
+
+      if (insideSexp && insideSexp.type === 'string') {
+        var from = backward ? insideSexp.start+insideSexp.open.length : idx;
+        var to = backward ? idx : insideSexp.end-insideSexp.close.length;
+        return {
+          changes: [['remove', from, to-from]],
+          newIndex: from
+        }
+      }
 
       if (backward) {
         var left = leftSiblings(parent, idx);
@@ -693,10 +771,35 @@
       return {changes: changes, newIndex: idx};
     },
 
+    transpose: function(ast,src,idx,args) {
+      args = args || {};
+
+      var outerSexps = w.containingSexpsAt(ast, idx, w.hasChildren),
+          parent = last(outerSexps),
+          left = leftSiblings(parent, idx),
+          right = rightSiblings(parent, idx);
+
+      // if "inside" a leaf node do nothing
+      if (parent.children.some(function(n) {
+          return n.start < idx && idx < n.end; })) return null;
+      // nothing there to transpose...
+      if (!left.length || !right.length) return null;
+
+      var l = last(left), r = right[0],
+          insertion = " " + w.source(src, l);
+
+      return {
+        changes: [
+          ['insert', r.end, insertion],
+          ['remove', l.start, r.start-l.start]],
+        newIndex: l.start + (r.end-r.start)+insertion.length
+      };
+
+    },
+
     delete: function(ast,src,idx,args) {
       args = args || {};
-      
-      
+
       var count = args.count || 1,
           backward = !!args.backward;
 

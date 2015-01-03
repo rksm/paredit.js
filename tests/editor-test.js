@@ -25,8 +25,9 @@ function expectIndent(src, expected) {
 }
 
 function expectChangesAndIndex(actual, changes, idx) {
-  expect(actual.changes).to.deep.eq(changes, d(actual.changes));
-  expect(actual.newIndex).equals(idx);
+  if (!changes) expect(actual).to.eq(null,d(actual));
+  else expect(actual.changes).to.deep.eq(changes, d(actual.changes));
+  if (typeof idx == "number") expect(actual.newIndex).equals(idx);
 }
 
 describe('paredit editor', function() {
@@ -47,7 +48,7 @@ describe('paredit editor', function() {
       var actual = ed.splitSexp(parse("[]"), "[]", 1);
       expect(actual.changes).to.deep.equal([["insert", 1, "] ["]], d(actual));
     });
-    
+
     describe("strings", function() {
       it('"fo|o"->"fo"| "o"', function() {
         var actual = ed.splitSexp(parse('"foo"'), '"foo"', 3);
@@ -72,7 +73,7 @@ describe('paredit editor', function() {
         [['insert', 0, "("],
          ['insert', 2, ")"]], 1);
     });
-    
+
     it("|a bb->(|a bb)", function() {
       expectChangesAndIndex(
         ed.wrapAround(parse("a bb"), "a bb", 0, '(', ')', {count: 2}),
@@ -89,6 +90,61 @@ describe('paredit editor', function() {
         [['remove', 6, 1],
          ['remove', 0, 1]],
         2);
+    });
+    it('"foo |bar"->foo |bar', function() {
+      expectChangesAndIndex(
+        ed.spliceSexp(parse('"foo bar"'), 'foo bar', 5),
+        [['remove', 8, 1],
+         ['remove', 0, 1]],
+        4);
+    });
+  });
+
+  describe("splice and kill", function() {
+    it("(aa |bb)->|bb", function() {
+      expectChangesAndIndex(
+        ed.spliceSexpKill(parse("(aa bb)"), "aa bb", 4, {backward: true}),
+        [['remove', 6, 1],
+         ['remove', 1, 3],
+         ['remove', 0, 1]],
+        0);
+    });
+
+    it("(|bb)->|bb", function() {
+      expectChangesAndIndex(
+        ed.spliceSexpKill(parse("(bb)"), "(bb)", 1, {backward: true}),
+        [['remove', 3, 1],
+         ['remove', 0, 1]],
+        0);
+    });
+
+    it("aa (x|y)->aa |y", function() {
+      expectChangesAndIndex(
+        ed.spliceSexpKill(parse("aa (xy)"), "aa (xy)", 5, {backward: true}),
+        [['remove', 6, 1],
+         ['remove', 4, 1],
+         ['remove', 3, 1]],
+        3);
+    });
+
+    it("(aa |bb cc)->|", function() {
+      expectChangesAndIndex(
+        ed.spliceSexpKill(parse("(aa bb cc)"), "(aa bb cc)", 4, {backward: false, count: 2}),
+        [['remove', 9, 1],
+         ['remove', 4, 5],
+         ['remove', 0, 1]],
+        3);
+    });
+
+    it("(\"f|oo\" bb)->|oo bb", function() {
+      expectChangesAndIndex(
+        ed.spliceSexpKill(parse('("foo" bb)'), '("foo" bb)', 3, {backward: true}),
+        [['remove', 9, 1],
+         ['remove', 5, 1],
+         ['remove', 2, 1],
+         ['remove', 1, 1],
+         ['remove', 0, 1]],
+        0);
     });
   });
 
@@ -119,7 +175,7 @@ describe('paredit editor', function() {
          ['insert', 14, ')']], 14);
     });
   });
-  
+
   describe("slurpSexp", function() {
     it("forward: (a (a |b) c d)->(a (a |b c d))", function() {
       expectChangesAndIndex(
@@ -145,6 +201,24 @@ describe('paredit editor', function() {
       expectChangesAndIndex(
         ed.killSexp(parse("(a b c d)"), "(a b c d)", 3, {backward: true, count: 2}),
         [['remove', 1, 2]], 1);
+    });
+
+    it('string: ("fo|o" b)->("|o" b)', function() {
+      expectChangesAndIndex(
+        ed.killSexp(parse('("foo" b)'), '("foo" b)', 4, {backward: true}),
+        [['remove', 2, 2]], 2);
+    });
+
+    it('fo|o->|o', function() {
+      expectChangesAndIndex(
+        ed.killSexp(parse('foo'), 'o', 2, {backward: true}),
+        [['remove', 0, 2]], 0);
+    });
+
+    it('comment: (;fo|oo\nb)->(|oo\nb)', function() {
+      expectChangesAndIndex(
+        ed.killSexp(parse('(;fooo\nb)'), '(;fooo\nb)', 4, {backward: true}),
+        [['remove', 1, 3]], 1);
     });
   });
 
@@ -222,7 +296,7 @@ describe('paredit editor', function() {
   });
 
   describe("indentation", function() {
-    
+
     it("indents sexp parts on newline", function() {
       var src = "(foo\nbar)";
       var actual = ed.indentRange(parse(src), src, 6,6);
