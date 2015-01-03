@@ -34,7 +34,7 @@
     readOnly: true
   }, {
     name: 'expandRegion',
-    bindKey: {win: 'Shift-Ctrl-E', mac: 'Shift-Command-Space'},
+    bindKey: {win: 'Shift-Ctrl-E|Ctrl-Shift-Space', mac: 'Shift-Command-Space|Ctrl-Shift-Space'},
     exec: function(ed, args) {
       args = args || {};
       
@@ -71,7 +71,7 @@
         var pos = pToI(ed, ed.getCursorPosition());
         if (state
           // has cursor moved? invalidate expansion state
-         && (state.range[0] === pos || state.range[1] === pos)) 
+         && (state.range  [0] === pos || state.range[1] === pos)) 
            return state;
 
         var aceRange = ed.getSelectionRange();
@@ -84,7 +84,7 @@
     readOnly: true
   }, {
     name: 'contractRegion',
-    bindKey: {win: 'Shift-Ctrl-S', mac: 'Ctrl-Command-space'},
+    bindKey: {win: 'Shift-Ctrl-S|Ctrl-Alt-Space', mac: 'Ctrl-Command-space|Ctrl-Alt-Space'},
     exec: function(ed) {
       if (ed.getSelectionRange().isEmpty()) return;
       var ast = ed.session.$ast;
