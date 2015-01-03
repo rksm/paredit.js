@@ -63,7 +63,7 @@ function edit(methodName/*,args*/) {
           });
         },
       }
-
+      
     },
   }
 }
@@ -90,53 +90,44 @@ function itTransforms(title, fromTo, method, args, changes) {
 describe('paredit editor', function() {
 
   describe("splitting", function() {
-    it("(|)->()| ()", function() {
-      var actual = ed.splitSexp(parse("()"), "()", 1);
-      expect(actual.changes).deep.equals([['insert', 1, ") ("]]);
-      expect(actual.newIndex).equals(2);
-    });
+    edit('splitSexp', "()", 1)
+      .transforms("(|)->()| ()")
+      .withChanges([['insert', 1, ") ("]]);
 
-    it("(|foo)->()| (foo), updates child indexes", function() {
-      var actual = ed.splitSexp(parse("(foo)"), "(foo)", 1);
-      expect(actual.changes).deep.equals([['insert', 1, ") ("]]);
-    });
+    edit('splitSexp', "(foo)", 1)
+      .transforms("updates child indexes","(|foo)->()| (foo)")
+      .withChanges([['insert', 1, ") ("]]);
 
-    it("[|]->[]| [], uses correct paren for change", function() {
-      var actual = ed.splitSexp(parse("[]"), "[]", 1);
-      expect(actual.changes).to.deep.equal([["insert", 1, "] ["]], d(actual));
-    });
-
+    edit('splitSexp', "[]", 1)
+      .transforms("uses correct paren for change","[|]->[]| []")
+      .withChanges([["insert", 1, "] ["]]);
+    
     describe("strings", function() {
-      it('"fo|o"->"fo"| "o"', function() {
-        var actual = ed.splitSexp(parse('"foo"'), '"foo"', 3);
-        expectChangesAndIndex(actual, [["insert", 3, '" "']], 4);
-      });
+      edit("splitSexp",'"foo"', 3)
+        .transforms('"fo|o"->"fo"| "o"')
+        .withChanges([["insert", 3, '" "']]);
     });
   });
 
   describe("wrap around", function() {
 
-    it("(|)->((|))", function() {
-      expectChangesAndIndex(
-        ed.wrapAround(parse("()"), "()", 1, '(', ')'),
+    edit("wrapAround",'(', ')')
+      .transforms("(|)->((|))")
+      .withChanges(
         [['insert', 1, "("],
-         ['insert', 2, ")"]],
-        2);
-    });
+         ['insert', 2, ")"]]);
 
-    it("|a->(|a)", function() {
-      expectChangesAndIndex(
-        ed.wrapAround(parse("a"), "a", 0, '(', ')'),
+    edit("wrapAround",'(', ')')
+      .transforms("|a->(|a)")
+      .withChanges(
         [['insert', 0, "("],
-         ['insert', 2, ")"]], 1);
-    });
-
-    it("|a bb->(|a bb)", function() {
-      expectChangesAndIndex(
-        ed.wrapAround(parse("a bb"), "a bb", 0, '(', ')', {count: 2}),
+         ['insert', 2, ")"]]);
+    
+    edit("wrapAround",'(', ')', {count: 2})
+      .transforms("|a bb->(|a bb)")
+      .withChanges(
         [['insert', 0, "("],
-         ['insert', 5, ")"]], 1);
-    });
+         ['insert', 5, ")"]]);
 
   });
 
@@ -190,7 +181,7 @@ describe('paredit editor', function() {
   });
 
   describe("closeAndNewline", function() {
-
+    
     edit("closeAndNewline")
       .transforms(" (aa| bb)-> (aa bb)\n |")
       .withChanges([['insert', 8, "\n "]]);
@@ -214,7 +205,7 @@ describe('paredit editor', function() {
         [['remove', 18, 1],
          ['insert', 14, ')']]);
   });
-
+  
   describe("slurpSexp", function() {
     edit("slurpSexp", {backward: false, count: 2})
       .transforms("forward: ", "(a (a |b) c d)->(a (a |b c d))")
@@ -238,11 +229,11 @@ describe('paredit editor', function() {
     edit("killSexp",{backward: true, count: 2})
       .transforms("backward: ","(a |b c d)->(|b c d)")
       .withChanges([['remove', 1, 2]]);
-
+    
     edit("killSexp",{backward: true})
       .transforms("string: ",'("fo|o" b)->("|o" b)')
       .withChanges([['remove', 2, 2]]);
-
+    
     edit("killSexp",{backward: true})
       .transforms('fo|o->|o')
       .withChanges([['remove', 0, 2]]);
@@ -253,47 +244,33 @@ describe('paredit editor', function() {
   });
 
   describe("deletion", function() {
-    edit("delete")
-      .transforms()
-      .withChanges();
-    it("deletes non list-like things: (abc|)->(a|)", function() {
-      expectChangesAndIndex(
-        ed.delete(parse("(abc)"), "(abc)", 4, {backward: true, count: 2}),
-        [['remove', 2, 2]], 2);
-    });
+    edit("delete",{backward: true, count: 2})
+      .transforms("deletes non list-like things", "(abc|)->(a|)")
+      .withChanges([['remove', 2, 2]]);
 
-    it("does not delete forward ad end of list: (abc|)->(abc|)", function() {
-      expectChangesAndIndex(
-        ed.delete(parse("(abc)"), "(abc)", 4, {backward: false, count: 2}),
-        [], 4);
-    });
+    edit("delete",{backward: false, count: 2})
+      .transforms("does not delete forward ad end of list", "(abc|)->(abc|)")
+      .withChanges([]);
 
-    it("deletes empty lists backward: (|)->|", function() {
-      expectChangesAndIndex(
-        ed.delete(parse("()"), "()", 1, {backward: true}),
-        [['remove', 0, 2]], 0);
-    });
-    it("deletes empty lists backward but only at begining: ( |)->(|)", function() {
-      expectChangesAndIndex(
-        ed.delete(parse("( )"), "( )", 2, {backward: true}),
-        [['remove', 1, 1]], 1);
-    });
-    it("deletes empty lists forward: (|)->|", function() {
-      expectChangesAndIndex(
-        ed.delete(parse("()"), "()", 1, {backward: false}),
-        [['remove', 0, 2]], 0);
-    });
-    it("deletes empty lists forward on toplevel: |()->|", function() {
-      expectChangesAndIndex(
-        ed.delete(parse("()"), "()", 0, {backward: false}),
-        [['remove', 0, 2]], 0);
-    });
+    edit("delete",{backward: true})
+      .transforms("deletes empty lists backward", "(|)->|")
+      .withChanges([['remove', 0, 2]]);
 
-    it('deletes empty strings: "|"->|', function() {
-      expectChangesAndIndex(
-        ed.delete(parse('""'), '""', 1, {backward: false}),
-        [['remove', 0, 2]], 0);
-    });
+    edit("delete",{backward: true})
+      .transforms("deletes empty lists backward but only at beginning", "( |)->(|)")
+      .withChanges([['remove', 1, 1]]);
+;
+    edit("delete",{backward: false})
+      .transforms("deletes empty lists forward","(|)->|")
+      .withChanges([['remove', 0, 2]]);
+
+    edit("delete",{backward: false})
+      .transforms("deletes empty lists forward on toplevel", "|()->|")
+      .withChanges([['remove', 0, 2]]);
+
+    edit("delete",{backward: false})
+      .transforms('deletes empty strings', '"|"->|')
+      .withChanges([['remove', 0, 2]]);
   });
 
   describe("transpose", function() {
@@ -329,7 +306,7 @@ describe('paredit editor', function() {
   });
 
   describe("indentation", function() {
-
+    
     it("indents sexp parts on newline", function() {
       var src = "(foo\nbar)";
       var actual = ed.indentRange(parse(src), src, 6,6);
