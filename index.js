@@ -13,7 +13,8 @@
 
   exports.parse = function(src, options) {
     options = options || {};
-    var addSrc = !!options.addSourceForLeafs;
+    var addSrc = options.hasOwnProperty('addSourceForLeafs') ?
+       options.addSourceForLeafs : true;
     var errors = [];
     
     var nodes = exports.reader.readSeq(src, function xform(type, read, start, end, args) {
