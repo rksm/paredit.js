@@ -229,14 +229,9 @@ var CodeNavigator = {
 
   spliceSexpKill: function(ed, args) {
     args = args || {};
-    var backward = args.backward;
     var data = this.prepareForSourceTransform(ed,args);
-    var toRemove = paredit.util.last(data.parentSexps).children.filter(function(n) {
-      return backward ? n.end <= data.pos : data.pos <= n.start; });
-    var result = this.spliceSexp(ed);
-    result && applyPareditChanges(ed, result.changes, result.newIndex, true);
-    ed.session.$ast = paredit.parse(ed.getValue(), {addSourceForLeafs: true});
-    var result = this.killSexp(ed, {backward: backward, count: toRemove.length});
+    if (!data.ast) return;
+    var result = paredit.editor.spliceSexpKill(data.ast, data.source, data.pos, args);
     result && applyPareditChanges(ed, result.changes, result.newIndex, false);
   },
 
@@ -346,18 +341,41 @@ oop.inherits(KeyHandler, HashHandler);
       return cmd;
   };
 
+  this.takeOverEmacsBindings = function(ed) {
+    // var ed = that.aceEditor
+    var emacsH = ed.keyBinding.$handlers.filter(function(ea) { return ea.isEmacs; })[0]
+    if (!emacsH) return
+    var bnd = emacsH.commandKeyBinding
+    Object.keys(bnd).forEach(function(k) {
+      var name = bnd[k].name || bnd[k];
+      var keys = k.replace(/c-/g, 'ctrl-')
+         .replace(/m-/g, 'alt-')
+         .replace(/cmd-/g, 'command-')
+         .replace(/s-/g, 'shift-');
+      if (!ed.getKeyboardHandler().commandKeyBinding[keys])
+        ed.getKeyboardHandler().bindKey(keys,name);
+    });
+
+    this.fixInputBindings();
+    return this;
+  };
+
+  this.fixInputBindings = function() {
+    // huh?
+    // FIXME! some characters like ` can't be used in key combos b/c ace
+    // escapes them strangely
+    var newBnds = this.commandKeyBinding;
+    Object.keys(newBnds).forEach(function(ea) {
+      if (ea.match(/input/)) newBnds[ea.replace(/input/g, '')] = newBnds[ea];
+    });
+    return this;
+  };
+
   this.update = function() {
     this.commandKeyBinding = {};
     this.bindKeys(pareditAce.keybindings);
-    
-    // FIXME! some characters like ` can't be used in key combos b/c ace
-    // escapes them strangely
-    var cmdKeyBinding = this.commandKeyBinding
-    var inputEscapes = Object.keys(this.commandKeyBinding).filter(function(k) {
-      return k.match(/input/); });
-    inputEscapes.forEach(function(k) {
-      cmdKeyBinding[k.replace(/input/g, '')] = cmdKeyBinding[k];
-    });
+    this.fixInputBindings();
+    return this;
   };
 
 }).call(KeyHandler.prototype);
@@ -385,17 +403,17 @@ var keybindings = {
   "Alt-[":                                        {name: "paredit-wrapAround", args: {open: '[', close: ']'}},
   "Alt-Shift-0":                                  {name: "paredit-closeAndNewline", args: {close: ')'}},
   "Alt-]":                                        {name: "paredit-closeAndNewline", args: {close: ']'}},
-  "Alt-Up":                                       {name: "paredit-spliceSexpKill", args: {backward: true}},
+  "Alt-Up|Alt-Shift-Up":                          {name: "paredit-spliceSexpKill", args: {backward: true}},
   "Alt-Down":                                     {name: "paredit-spliceSexpKill", args: {backward: false}},
   "Ctrl-x `":                                     "gotoNextError",
   "Tab":                                          "paredit-indent",
   "Enter":                                        "paredit-newlineAndIndent",
-  "(": {name: "paredit-openList", args: {open: "(", close: ")"}},
-  "[": {name: "paredit-openList", args: {open: "[", close: "]"}},
-  "{": {name: "paredit-openList", args: {open: "{", close: "}"}},
-  "\"": {name: "paredit-openList", args: {open: "\"", close: "\""}},
-  "Backspace": {name: "paredit-delete", args: {backward: true}},
-  "Ctrl-d|delete": {name: "paredit-delete", args: {backward: false}}
+  "(":                                            {name: "paredit-openList", args: {open: "(", close: ")"}},
+  "[":                                            {name: "paredit-openList", args: {open: "[", close: "]"}},
+  "{":                                            {name: "paredit-openList", args: {open: "{", close: "}"}},
+  "\"":                                           {name: "paredit-openList", args: {open: "\"", close: "\""}},
+  "Backspace":                                    {name: "paredit-delete", args: {backward: true}},
+  "Ctrl-d|delete":                                {name: "paredit-delete", args: {backward: false}}
 }
 
 
