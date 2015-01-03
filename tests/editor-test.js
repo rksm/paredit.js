@@ -189,6 +189,27 @@ describe('paredit editor', function() {
     });
   });
 
+  describe("transpose", function() {
+    it("(xxx |yyy)->(xxx yyy|)", function() {
+      expectChangesAndIndex(
+        ed.transpose(parse("(xxx yyy)"), "(xxx yyy)", 5, {}),
+        [['insert', 8, " xxx"],
+         ['remove', 1, 4]], 8);
+    });
+    it("((a)|(b))->((a) (b)|)", function() {
+      expectChangesAndIndex(
+        ed.transpose(parse("((a)(b))"), "((a)(b))", 4, {}),
+        [['insert', 7, " (a)"],
+         ['remove', 1, 3]], 8);
+    });
+    it("(|yyy)->(|yyy)", function() {
+      expectChangesAndIndex(ed.transpose(parse("(yyy)"), "(yyy)", 1, {}), null);
+    });
+    it("( | )->( | )", function() {
+      expectChangesAndIndex(ed.transpose(parse("(  )"), "(  )", 2, {}), null);
+    });
+  });
+
   describe("rewrite ast", function() {
     it("replaces nodes and constructs new ast", function() {
       var ast = parse("(a (c d) d) e"),
