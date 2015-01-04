@@ -461,7 +461,10 @@ var ModeMixin = {
 
   attachToEditor: function(ed) {
     // keyboard / command setup
-    ed.keyBinding.addKeyboardHandler(this.getKeyhandler());
+    var h = this.getKeyhandler();
+    ed.keyBinding.addKeyboardHandler(h);
+    h.takeOverEmacsBindings(ed);
+
     var cmds = pareditAce.commands.reduce(function(cmds, ea) {
       cmds[ea.name] = ea; return cmds; }, {})
     ed.commands.addCommands(cmds);
