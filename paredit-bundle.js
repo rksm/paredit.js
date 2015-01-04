@@ -801,20 +801,34 @@
       args = args || {};
 
       var count = args.count || 1,
-          backward = !!args.backward;
+          backward = !!args.backward,
+          endIdx = args.endIdx; // for text ranges
 
       var outerSexps = w.containingSexpsAt(ast, idx),
           outerLists = outerSexps.filter(function(n) { return w.hasChildren(n); }),
-          parent = last(outerLists), sexp = last(outerSexps),
-          isInList = parent === sexp,
+          parent = last(outerLists), sexp = last(outerSexps);
+
+      var deleteRange = typeof endIdx === "number";
+      if (deleteRange) {
+        var endParent = last(w.containingSexpsAt(ast, endIdx));
+        if (parent !== endParent) return null;
+        var insideNodeStart = last(w.containingSexpsAt(parent, idx));
+        var insideNodeEnd = last(w.containingSexpsAt(parent, endIdx));
+        if (insideNodeStart !== parent || insideNodeEnd !== parent) return null;
+        var delStart = Math.min(idx, endIdx),
+            delEnd = Math.max(idx, endIdx);
+        return {changes: [['remove', delStart, delEnd-delStart]], newIndex: delStart}
+      }
+
+      var isInList = parent === sexp,
           left = isInList && leftSiblings(parent, idx),
           right = isInList && rightSiblings(parent, idx),
-          changes = [], newIndex = idx,
           noDelete = {changes: [], newIndex: idx},
           simpleDelete = {
             changes: [['remove', backward ? idx-count : idx, count]],
             newIndex: backward ? idx-count : idx
-          };
+          },
+          changes = [], newIndex = idx;
 
       if (!isInList && sexp.type === 'comment') return simpleDelete;
 

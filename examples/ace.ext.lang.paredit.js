@@ -223,15 +223,9 @@ var CodeNavigator = {
     args = args || {};
     var data = this.prepareForSourceTransform(ed,args);
     if (!data.ast) return;
-    var result = paredit.editor.delete(data.ast, data.source, data.pos, args);
-    result && applyPareditChanges(ed, result.changes, result.newIndex, false);
-  },
-
-  transpose: function(ed, args) {
-    args = args || {};
-    var data = this.prepareForSourceTransform(ed,args);
-    if (!data.ast) return;
-    var result = paredit.editor.transpose(data.ast, data.source, data.pos, args);
+    if (data.selStart !== data.selEnd) args.endIdx = data.selEnd;
+    var result = paredit.editor.delete(
+      data.ast, data.source, args.endIdx ? data.selStart: data.pos, args);
     result && applyPareditChanges(ed, result.changes, result.newIndex, false);
   },
 
@@ -401,7 +395,6 @@ var keybindings = {
 
   "Alt-Shift-s":                                  "paredit-splitSexp",
   "Alt-s":                                        "paredit-spliceSexp",
-  "Ctrl-Alt-t":                                   "paredit-transpose",
   "Ctrl-Alt-k":                                   {name: "paredit-killSexp", args: {backward: false}},
   "Ctrl-Alt-Backspace":                           {name: "paredit-killSexp", args: {backward: true}},
   "Ctrl-Shift-]":                                 {name: "paredit-barfSexp", args: {backward: false}},
@@ -432,7 +425,7 @@ var keybindings = {
 
 var commands = [
  "splitSexp","spliceSexp","wrapAround","closeAndNewline","barfSexp","slurpSexp",
- "killSexp","indent","spliceSexpKill","newlineAndIndent","openList", "delete", "transpose"
+ "killSexp","indent","spliceSexpKill","newlineAndIndent","openList", "delete"
 ].map(function(name) {
   return {
      name: 'paredit-' + name,
@@ -461,10 +454,7 @@ var ModeMixin = {
 
   attachToEditor: function(ed) {
     // keyboard / command setup
-    var h = this.getKeyhandler();
-    ed.keyBinding.addKeyboardHandler(h);
-    h.takeOverEmacsBindings(ed);
-
+    ed.keyBinding.addKeyboardHandler(this.getKeyhandler());
     var cmds = pareditAce.commands.reduce(function(cmds, ea) {
       cmds[ea.name] = ea; return cmds; }, {})
     ed.commands.addCommands(cmds);

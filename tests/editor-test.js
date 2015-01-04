@@ -254,6 +254,14 @@ describe('paredit editor', function() {
     edit("delete",{backward: false})
       .transforms('deletes empty strings', '"|"->|')
       .withChanges([['remove', 0, 2]]);
+
+    edit("delete",{backward: true, endIdx: 12})
+      .transforms('deletes entire sexps when no overlap', "(foo| bar baz)->(foo|)")
+      .withChanges([['remove', 4, 8]]);
+    
+    edit("delete",{backward: true, endIdx: 12})
+      .transforms('no overlap range dels', "(fo|o bar baz)->(foo bar baz)")
+      .withChanges(null);
   });
 
   describe("transpose", function() {
