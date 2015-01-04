@@ -227,6 +227,14 @@ var CodeNavigator = {
     result && applyPareditChanges(ed, result.changes, result.newIndex, false);
   },
 
+  transpose: function(ed, args) {
+    args = args || {};
+    var data = this.prepareForSourceTransform(ed,args);
+    if (!data.ast) return;
+    var result = paredit.editor.transpose(data.ast, data.source, data.pos, args);
+    result && applyPareditChanges(ed, result.changes, result.newIndex, false);
+  },
+
   spliceSexpKill: function(ed, args) {
     args = args || {};
     var data = this.prepareForSourceTransform(ed,args);
@@ -393,6 +401,7 @@ var keybindings = {
 
   "Alt-Shift-s":                                  "paredit-splitSexp",
   "Alt-s":                                        "paredit-spliceSexp",
+  "Ctrl-Alt-t":                                   "paredit-transpose",
   "Ctrl-Alt-k":                                   {name: "paredit-killSexp", args: {backward: false}},
   "Ctrl-Alt-Backspace":                           {name: "paredit-killSexp", args: {backward: true}},
   "Ctrl-Shift-]":                                 {name: "paredit-barfSexp", args: {backward: false}},
@@ -404,7 +413,7 @@ var keybindings = {
   "Alt-Shift-0":                                  {name: "paredit-closeAndNewline", args: {close: ')'}},
   "Alt-]":                                        {name: "paredit-closeAndNewline", args: {close: ']'}},
   "Alt-Up|Alt-Shift-Up":                          {name: "paredit-spliceSexpKill", args: {backward: true}},
-  "Alt-Down":                                     {name: "paredit-spliceSexpKill", args: {backward: false}},
+  "Alt-Down||Alt-Shift-Down":                     {name: "paredit-spliceSexpKill", args: {backward: false}},
   "Ctrl-x `":                                     "gotoNextError",
   "Tab":                                          "paredit-indent",
   "Enter":                                        "paredit-newlineAndIndent",
@@ -423,7 +432,7 @@ var keybindings = {
 
 var commands = [
  "splitSexp","spliceSexp","wrapAround","closeAndNewline","barfSexp","slurpSexp",
- "killSexp","indent","spliceSexpKill","newlineAndIndent","openList", "delete"
+ "killSexp","indent","spliceSexpKill","newlineAndIndent","openList", "delete", "transpose"
 ].map(function(name) {
   return {
      name: 'paredit-' + name,
