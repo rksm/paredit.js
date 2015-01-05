@@ -1,4 +1,4 @@
-/*global window, process, global*/
+/*global window, process, global, module*/
 
 // If not on nodejs: concat or load lib files after loading this files.
 
@@ -16,14 +16,14 @@
     var addSrc = options.hasOwnProperty('addSourceForLeafs') ?
        options.addSourceForLeafs : true;
     var errors = [];
-    
+
     var nodes = exports.reader.readSeq(src, function xform(type, read, start, end, args) {
       var result = {type: type, start: start.idx, end: end.idx};
       if (type === "error") {
         result.error = read.error;
         errors.push(result);
       } else if (addSrc && type !== 'list')
-        result.source = src.slice(result.start, result.end)
+        result.source = src.slice(result.start, result.end);
       if (type === "list") result.children = read;
       if (type === "list" || type === "string") {
         result.open = args.open;
@@ -38,6 +38,6 @@
       errors: errors,
       children: nodes
     };
-  }
+  };
 
 })();

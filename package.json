@@ -13,7 +13,9 @@
     "code editor",
     "programming"
   ],
-  "dependencies": {},
+  "dependencies": {
+    "ace.improved": "*"
+  },
   "devDependencies": {
     "chai": "^1.10.0",
     "chai-subset": "^0.3.0",
