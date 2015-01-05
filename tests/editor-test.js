@@ -262,6 +262,10 @@ describe('paredit editor', function() {
     edit("delete",{backward: true, endIdx: 12})
       .transforms('no overlap range dels', "(fo|o bar baz)->(foo bar baz)")
       .withChanges(null);
+      
+    edit("delete",{backward: true})
+      .transforms('simply deletes numbers', "123|->12|")
+      .withChanges([['remove', 2, 1]]);
   });
 
   describe("transpose", function() {
