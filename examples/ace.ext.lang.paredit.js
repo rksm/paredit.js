@@ -441,7 +441,9 @@ var commands = [
      name: 'paredit-' + name,
      exec: function(ed, args) {
        ed.session.getMode().getCodeNavigator()[name](ed, args);
-     }
+     },
+     multiSelectAction: 'forEach',
+     handlesCount: true
   }
 });
 
