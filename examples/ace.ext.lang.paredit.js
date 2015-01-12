@@ -362,6 +362,7 @@ oop.inherits(KeyHandler, HashHandler);
          .replace(/m-/g, 'alt-')
          .replace(/cmd-/g, 'command-')
          .replace(/s-/g, 'shift-');
+
       if (!ed.getKeyboardHandler().commandKeyBinding[keys])
         ed.getKeyboardHandler().bindKey(keys,name);
     });
@@ -420,9 +421,9 @@ var keybindings = {
   "Ctrl-x `":                                     "gotoNextError",
   "Tab":                                          "paredit-indent",
   "Enter":                                        "paredit-newlineAndIndent",
-  "(":                                            {name: "paredit-openList", args: {open: "(", close: ")"}},
+  "(|Shift-(":                                            {name: "paredit-openList", args: {open: "(", close: ")"}},
   "[":                                            {name: "paredit-openList", args: {open: "[", close: "]"}},
-  "{":                                            {name: "paredit-openList", args: {open: "{", close: "}"}},
+  "{|Shift-{|Alt-Shift-{":                                            {name: "paredit-openList", args: {open: "{", close: "}"}},
   "\"":                                           {name: "paredit-openList", args: {open: "\"", close: "\""}},
   "Backspace":                                    {name: "paredit-delete", args: {backward: true}},
   "Ctrl-d|delete":                                {name: "paredit-delete", args: {backward: false}}
