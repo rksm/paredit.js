@@ -367,6 +367,7 @@ oop.inherits(KeyHandler, HashHandler);
     });
 
     this.fixInputBindings();
+    this.addCommands(emacsH.commands);
     return this;
   };
 
