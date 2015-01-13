@@ -12,6 +12,14 @@ var pareditAce = ace.ext.lang.paredit || (ace.ext.lang.paredit = {});
 var oop = ace.require('ace/lib/oop');
 
 function load() {
+  // "exports"
+  pareditAce.CodeNavigator  = CodeNavigator;
+  pareditAce.KeyHandler     = KeyHandler;
+  pareditAce.keybindings    = keybindings;
+  pareditAce.commands       = commands;
+  pareditAce.ModeMixin      = ModeMixin;
+  pareditAce.supportedModes = supportedModes;
+
   ace.config.defineOptions(ace.require('ace/editor').Editor.prototype, 'editor', {
     "ext.lang.paredit.showErrors": {initialValue: true},
   });
@@ -20,14 +28,6 @@ function load() {
     ace.config.loadModule(["mode", id], function(mod) {
       oop.implement(mod.Mode.prototype, pareditAce.ModeMixin); });
   });
-
-  // "exports"
-  pareditAce.CodeNavigator  = CodeNavigator;
-  pareditAce.KeyHandler     = KeyHandler;
-  pareditAce.keybindings    = keybindings;
-  pareditAce.commands       = commands;
-  pareditAce.ModeMixin      = ModeMixin;
-  pareditAce.supportedModes = supportedModes;
 
   ace.ext.keys.addKeyCustomizationLayer("paredit-keys", {
     modes: supportedModes,
@@ -560,7 +560,6 @@ function applyPareditChanges(ed, changes, newIndex, indent) {
   //           paredit.editor
   // newIndex: where to put the cursor after applying the changes
   if (!changes || !changes.length) return;
-
   var nUndos = undoStackSize(ed);
   changes.forEach(function(ea) {
     var type = ea[0];
@@ -578,7 +577,7 @@ function applyPareditChanges(ed, changes, newIndex, indent) {
   });
 
   if (newIndex)
-    ed.moveCursorToPosition(
+    ed.selection.moveToPosition(
       ed.session.doc.indexToPosition(newIndex));
 
   if (!indent) ed.session.markUndoGroup();
