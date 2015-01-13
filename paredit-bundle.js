@@ -407,6 +407,15 @@
       return last(containing).start;
     },
 
+    closeList: function(ast, idx) {
+      var containing = w.containingSexpsAt(ast, idx);
+      var l = last(containing);
+      if (!l || l.type === "toplevel") return idx;
+      if (l.type === "string" || l.type === "comment") return undefined;
+      var lists = containing.filter(w.hasChildren);
+      return last(lists).end;
+    },
+
     sexpRange: function(ast, idx) {
       // finds the range of the sexp at idx
       return nav.sexpRangeExpansion(ast, idx, idx);
@@ -574,6 +583,50 @@
       }, {original: nodeToReplace, nodes: newNodes});
 
       return replaced.nodes[0];
+    },
+
+    openList: function(ast, src, idx, args) {
+      args = args || {}
+      var count = args.count || 1;
+      var open = args.open || '(', close = args.close || ')';
+      var containing = w.containingSexpsAt(ast, idx);
+      var l = last(containing);
+      if (l && l.type === "comment" || l.type === "string")
+          return {changes: [["insert", idx, open]], newIndex: idx+open.length}
+
+      if (!args.endIdx) { // not a selection range
+        return {changes: [["insert", idx, open+close]], newIndex: idx+open.length}
+      }
+
+
+      var parentStart = last(w.containingSexpsAt(ast, idx, w.hasChildren));
+      var parentEnd = last(w.containingSexpsAt(ast, args.endIdx, w.hasChildren));
+
+      // does selection span multiple expressions? collapse selection
+      // var left = parentEnd.children.filter(function(ea) { return ea.end <= pos; });
+      // var right = parentEnd.children.filter(function(ea) { return pos <= ea.start; });
+
+      if (parentStart !== parentEnd) {
+        return {changes: [["insert", idx, open+close]], newIndex: idx+open.length}
+      }
+
+      var inStart = parentEnd.children.filter(function(ea) {
+            return ea.start < idx && idx < ea.end ; }),
+          inEnd = parentEnd.children.filter(function(ea) {
+            return ea.start < args.endIdx && args.endIdx < ea.end ; }),
+          moveStart = inStart[0] && inStart[0] !== inEnd[0]
+                   && (inEnd[0] || inStart[0].type !== 'symbol'),
+          moveEnd = inEnd[0] && inStart[0] !== inEnd[0]
+                 && (inStart[0] || inEnd[0].type !== 'symbol'),
+          insertOpenAt = moveStart ? inStart[0].end : idx,
+          insertCloseAt = moveEnd ? inEnd[0].start : args.endIdx;
+
+      return {
+        changes: [["insert", insertCloseAt, close],
+                  ["insert", insertOpenAt, open]],
+        newIndex: insertOpenAt+open.length
+      };
+
     },
 
     spliceSexp: function(ast, src, idx) {

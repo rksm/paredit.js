@@ -16,6 +16,11 @@ function load() {
     "ext.lang.paredit.showErrors": {initialValue: true},
   });
 
+  supportedModes.forEach(function(id) {
+    ace.config.loadModule(["mode", id], function(mod) {
+      oop.implement(mod.Mode.prototype, pareditAce.ModeMixin); });
+  });
+
   // "exports"
   pareditAce.CodeNavigator  = CodeNavigator;
   pareditAce.KeyHandler     = KeyHandler;
@@ -65,11 +70,11 @@ var CodeNavigator = {
       var data = this.prepareForSourceTransform(ed,args);
       if (!data.ast || !data.ast.type === 'toplevel') return;
       var moveToIdx = paredit.navigator[method](data.ast, data.pos);
-      if (moveToIdx !== "undefined") {
-          var moveToPos = ed.session.doc.indexToPosition(moveToIdx),
-              method = (data.isSelecting ? 'select' : 'moveCursor') + 'ToPosition';
-          ed.selection[method](moveToPos);
-      }
+      if (moveToIdx === undefined) return false;
+      var moveToPos = ed.session.doc.indexToPosition(moveToIdx),
+          method = (data.isSelecting ? 'select' : 'moveCursor') + 'ToPosition';
+      ed.selection[method](moveToPos);
+      return true;
   },
 
   forwardSexp: function(ed, args) {
@@ -246,56 +251,24 @@ var CodeNavigator = {
   openList: function(ed, args) {
     // FIXME: this is too complex for the ace integration, move to
     // paredit.editor!
-
     args = args || {};
     var open = args.open || '(', close = args.close || ')';
 
     var data = this.prepareForSourceTransform(ed,args);
     if (!data.ast) { ed.insert(open); return; }
 
-    var range = ed.getSelectionRange();
-    if (range.isEmpty()) {
-      applyPareditChanges(ed,
-        [["insert", data.pos, open+close]],
-        data.pos+open.length, true)
-      return;
-    }
-
-    ed.selection.clearSelection();
-
-    var parentStart = paredit.util.last(paredit.walk.containingSexpsAt(
-      data.ast, data.selStart, paredit.walk.hasChildren));
-    var parentEnd = paredit.util.last(paredit.walk.containingSexpsAt(
-      data.ast, data.selEnd, paredit.walk.hasChildren));
-
-    // does selection span multiple expressions? collapse selection
-    // var left = parentEnd.children.filter(function(ea) { return ea.end <= pos; });
-    // var right = parentEnd.children.filter(function(ea) { return pos <= ea.start; });
-
-    if (parentStart !== parentEnd) {
-      applyPareditChanges(ed,
-        [["insert", data.pos, open+close]],
-        data.pos+open.length, true);
-      return;
-    }
-
-    var inStart = parentEnd.children.filter(function(ea) {
-          return ea.start < data.selStart && data.selStart < ea.end ; }),
-        inEnd = parentEnd.children.filter(function(ea) {
-          return ea.start < data.selEnd && data.selEnd < ea.end ; }),
-        moveStart = inStart[0] && inStart[0] !== inEnd[0]
-                 && (inEnd[0] || inStart[0].type !== 'symbol'),
-        moveEnd = inEnd[0] && inStart[0] !== inEnd[0]
-               && (inStart[0] || inEnd[0].type !== 'symbol'),
-        insertOpenAt = moveStart ? inStart[0].end : data.selStart,
-        insertCloseAt = moveEnd ? inEnd[0].start : data.selEnd;
-
-    applyPareditChanges(ed,
-      [["insert", insertCloseAt, close],
-       ["insert", insertOpenAt, open]],
-      insertOpenAt+open.length,
-        {start: insertOpenAt, end: insertCloseAt});
+    if (data.selStart !== data.selEnd) args.endIdx = data.selEnd;
+    var result = paredit.editor.openList(
+      data.ast, data.source, args.endIdx ? data.selStart: data.pos, args);
+    result && applyPareditChanges(ed, result.changes, result.newIndex, true);
   },
+
+  closeList: function(ed, args) {
+    var data = this.prepareForSourceTransform(ed,args);
+    if (!this.clojureSexpMovement(ed, "closeList", args)) {
+      applyPareditChanges(ed, [["insert", data.pos,args.close]], data.pos+args.close.length);
+    }
+  }
 };
 
 
@@ -432,10 +405,13 @@ var keybindings = {
   "Ctrl-x `":                                     "gotoNextError",
   "Tab":                                          "paredit-indent",
   "Enter":                                        "paredit-newlineAndIndent",
-  "(|Shift-(":                                            {name: "paredit-openList", args: {open: "(", close: ")"}},
+  "(|Shift-(":                                    {name: "paredit-openList", args: {open: "(", close: ")"}},
   "[":                                            {name: "paredit-openList", args: {open: "[", close: "]"}},
   "{|Shift-{|Alt-Shift-{":                                            {name: "paredit-openList", args: {open: "{", close: "}"}},
   "\"":                                           {name: "paredit-openList", args: {open: "\"", close: "\""}},
+  ")":                                            {name: "paredit-closeList", args: {open: "(", close: ")"}},
+  "]":                                            {name: "paredit-closeList", args: {open: "[", close: "]"}},
+  "}":                                            {name: "paredit-closeList", args: {open: "{", close: "}"}},
   "Backspace":                                    {name: "paredit-delete", args: {backward: true}},
   "Ctrl-d|delete":                                {name: "paredit-delete", args: {backward: false}}
 }
@@ -448,7 +424,7 @@ var keybindings = {
 var commands = [
  "splitSexp","spliceSexp","wrapAround","closeAndNewline","barfSexp","slurpSexp",
  "killSexp","indent","spliceSexpKill","newlineAndIndent","openList", "delete",
- 'transpose'
+ 'transpose', 'closeList'
 ].map(function(name) {
   return {
      name: 'paredit-' + name,
@@ -496,6 +472,9 @@ var ModeMixin = {
     if (ed.session.getMode().$id === this.$id) return;
     ed.session.on('change', ed.session["ext.lang.pareedit.onDocChange"]);
   },
+
+  get $behaviour() { return null; },
+  set $behaviour(v) { return this._$behaviour = v; },
 
   getCodeNavigator: function() {
     return pareditAce.CodeNavigator;

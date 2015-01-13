@@ -72,6 +72,37 @@ function edit(methodName/*,args*/) {
 
 describe('paredit editor', function() {
 
+  describe("openList", function() {
+    edit('openList')
+      .transforms("|->(|)")
+      .withChanges([['insert', 0, "()"]]);
+
+    edit('openList')
+      .transforms("|()->(|)()")
+      .withChanges([['insert', 0, "()"]]);
+
+    edit('openList')
+      .transforms("(|)->((|))")
+      .withChanges([['insert', 1, "()"]]);
+
+    edit('openList', {endIdx: 5})
+      .transforms("|(foo)->(|(foo))")
+      .withChanges([['insert', 5, ")"],
+                    ['insert', 0, "("]]);
+
+    edit('openList')
+      .transforms('("f|oo")->("f(|oo")')
+      .withChanges([['insert', 3, "("]]);
+
+    edit('openList')
+      .transforms('(\n;f|oo\n)->(\n;f(|oo\n)')
+      .withChanges([['insert', 4, "("]]);
+
+    edit('openList', {endIdx: 7})
+      .transforms('(a |b (c d))->(a (|)b (c d))')
+      .withChanges([['insert', 3, "()"]]);
+  });
+
   describe("splitting", function() {
     edit('splitSexp', "()", 1)
       .transforms("(|)->()| ()")

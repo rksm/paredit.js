@@ -14,9 +14,7 @@ var d = JSON.stringify;
 
 var nav = paredit.navigator;
 
-var parse = function(src) {
-  return paredit.parse(src, {addSourceForLeafs: true});
-};
+var parse = function(src) { return paredit.parse(src); };
 
 describe('paredit navigator', function() {
 
@@ -67,6 +65,33 @@ describe('paredit navigator', function() {
         expect(nav.backwardUpSexp(ast, 8)).eq(0);
         expect(nav.backwardUpSexp(ast, 15)).eq(9);
         expect(nav.backwardUpSexp(ast, 21)).eq(21);
+      });
+
+    });
+  });
+
+  describe("list navigation", function() {
+    
+    describe(")", function() {
+
+      it("(..|.)->(...)|", function() {
+        expect(nav.closeList(parse("(a b c)"), 2)).eq(7);
+      });
+
+      it("|(...)->|(...)", function() {
+        expect(nav.closeList(parse("(a b c)"), 0)).eq(0);
+      });
+
+      it("(.[.|.])->(.[..]|)", function() {
+        expect(nav.closeList(parse("(a [b c])"), 5)).eq(8);
+      });
+
+      it("(.{.|.})->(.{..}|)", function() {
+        expect(nav.closeList(parse("(a {b c})"), 5)).eq(8);
+      });
+
+      it("(.\".|.\")->(.\".)|.\")", function() {
+        expect(nav.closeList(parse("(a \"foo\")"), 6)).eq(undefined);
       });
 
     });
