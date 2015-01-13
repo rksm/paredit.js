@@ -1,6 +1,6 @@
 {
   "name": "paredit.js",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "Generic parser and editor for s-expressions.",
   "main": "index.js",
   "scripts": {
@@ -14,7 +14,7 @@
     "programming"
   ],
   "dependencies": {
-    "ace.improved": "*"
+    "ace.improved": ">=0.1.4"
   },
   "devDependencies": {
     "chai": "^1.10.0",

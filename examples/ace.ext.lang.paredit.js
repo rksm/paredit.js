@@ -1,4 +1,9 @@
-(function(ace, paredit) {
+/*global ace,paredit*/
+
+(function() {
+
+if (!ace.improved) throw new Error("ace.ext.lang.paredit needs ace.improved!");
+if (!ace.ext.keys) throw new Error("ace.ext.lang.paredit needs ace.ext.keys!");
 
 ace.ext = ace.ext || {};
 ace.ext.lang = ace.ext.lang || {};
@@ -7,22 +12,6 @@ var pareditAce = ace.ext.lang.paredit || (ace.ext.lang.paredit = {});
 var oop = ace.require('ace/lib/oop');
 
 function load() {
-  // wrap the mode changer of ace so that we can automatically hook into any
-  // editor.
-  var edProto = ace.require('ace/editor').Editor.prototype;
-  var onChangeMode = edProto.onChangeMode.originalFunction || edProto.onChangeMode;
-  edProto.onChangeMode.originalFunction = onChangeMode;
-
-  edProto.onChangeMode = function(e) {
-    var mode = this.session.getMode();
-    if (isActiveFor(mode) && !mode["$ext.lang.paredit.modeMixin"]) {
-      oop.implement(mode, pareditAce.ModeMixin);
-    }
-    var res = onChangeMode.call(this, e);
-    if (mode.attachToEditor) mode.attachToEditor(this);
-    return res;
-  };
-
   ace.config.defineOptions(ace.require('ace/editor').Editor.prototype, 'editor', {
     "ext.lang.paredit.showErrors": {initialValue: true},
   });
@@ -34,6 +23,11 @@ function load() {
   pareditAce.commands       = commands;
   pareditAce.ModeMixin      = ModeMixin;
   pareditAce.supportedModes = supportedModes;
+
+  ace.ext.keys.addKeyCustomizationLayer("paredit-keys", {
+    modes: supportedModes,
+    keyHandler: new KeyHandler()
+  });
 };
 
 var supportedModes = ['ace/mode/lisp', 'ace/mode/clojure'];
@@ -312,16 +306,16 @@ var CodeNavigator = {
 var oop = ace.require('ace/lib/oop');
 var keyUtil = ace.require("ace/lib/keys");
 var useragent = ace.require("ace/lib/useragent");
-var HashHandler = ace.require("ace/keyboard/hash_handler").HashHandler;
+var KeyHandlerForCustomizations = ace.ext.keys.KeyHandlerForCustomizations;
 var KEY_MODS = keyUtil.KEY_MODS;
 
 
-function KeyHandler() {
-  HashHandler.call(this);
+function KeyHandler(bindings) {
+  KeyHandlerForCustomizations.call(this, bindings);
   this.update();
 }
 
-oop.inherits(KeyHandler, HashHandler);
+oop.inherits(KeyHandler, KeyHandlerForCustomizations);
 
 (function() {
 
@@ -329,12 +323,12 @@ oop.inherits(KeyHandler, HashHandler);
       // ed = that.aceEditor
       // ed.keyBinding.$callKeyboardHandlers
       // ed.getKeyboardHandler().commandKeyBinding
-      var cmd = HashHandler.prototype.handleKeyboard.call(this, data, hashId, keyString, keyCode);
+      var cmd = KeyHandlerForCustomizations.prototype.handleKeyboard.call(this, data, hashId, keyString, keyCode);
 
       if (!cmd || !cmd.command || cmd.command === 'null') return cmd;
 
       if (typeof cmd.command === 'object') {
-        cmd = {command: cmd.command.name,
+        cmd = {command: cmd.command.name || cmd.command.command,
                args: paredit.util.clone(cmd.command.args)}
       }
 
@@ -350,6 +344,23 @@ oop.inherits(KeyHandler, HashHandler);
 
       return cmd;
   };
+
+
+  this.__defineGetter__("commands", function() {
+    var cmds = pareditAce.commands.reduce(function(cmds, ea) {
+      cmds[ea.name] = ea; return cmds; }, {})
+    return cmds;
+  });
+
+  this.__defineSetter__("commands", function(v) {});
+
+  this.__defineGetter__("commandKeyBinding", function() {
+    return oop.mixin(this._commandKeyBinding, keybindings);
+  });
+
+  this.__defineSetter__("commandKeyBinding", function(v) {
+    return this._commandKeyBinding = v;
+  });
 
   this.takeOverEmacsBindings = function(ed) {
     // var ed = that.aceEditor
@@ -458,17 +469,9 @@ var ModeMixin = {
 
   "$ext.lang.paredit.modeMixin": true,
 
-  keyhandler: null,
-
-  getKeyhandler: function() {
-    if (!this.keyhandler)
-      this.keyhandler = new pareditAce.KeyHandler();
-    return this.keyhandler;
-  },
-
+  // Note: attachToEditor is not provided by ace by default. It is mode support
+  // implemented in ace.improved/lib/ace.improvements.js
   attachToEditor: function(ed) {
-    // keyboard / command setup
-    ed.keyBinding.addKeyboardHandler(this.getKeyhandler());
     var cmds = pareditAce.commands.reduce(function(cmds, ea) {
       cmds[ea.name] = ea; return cmds; }, {})
     ed.commands.addCommands(cmds);
@@ -492,7 +495,6 @@ var ModeMixin = {
   detach: function(ed) {
     if (ed.session.getMode().$id === this.$id) return;
     ed.session.on('change', ed.session["ext.lang.pareedit.onDocChange"]);
-    ed.keyBinding.removeKeyboardHandler(this.getKeyhandler());
   },
 
   getCodeNavigator: function() {
@@ -617,4 +619,4 @@ function applyPareditChanges(ed, changes, newIndex, indent) {
 
 load();
 
-})(window.ace, window.paredit);
+})();
