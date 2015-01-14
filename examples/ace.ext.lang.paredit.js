@@ -318,7 +318,6 @@ oop.inherits(KeyHandler, KeyHandlerForCustomizations);
       return cmd;
   };
 
-
   this.__defineGetter__("commands", function() {
     var cmds = pareditAce.commands.reduce(function(cmds, ea) {
       cmds[ea.name] = ea; return cmds; }, {})
@@ -335,40 +334,9 @@ oop.inherits(KeyHandler, KeyHandlerForCustomizations);
     return this._commandKeyBinding = v;
   });
 
-  this.takeOverEmacsBindings = function(ed) {
-    // var ed = that.aceEditor
-    var emacsH = ed.keyBinding.$handlers.filter(function(ea) { return ea.isEmacs; })[0]
-    if (!emacsH) return
-    var bnd = emacsH.commandKeyBinding
-    Object.keys(bnd).forEach(function(k) {
-      var name = bnd[k].name || bnd[k];
-      var keys = k.replace(/c-/g, 'ctrl-')
-         .replace(/m-/g, 'alt-')
-         .replace(/cmd-/g, 'command-')
-         .replace(/s-/g, 'shift-');
-
-      if (!ed.getKeyboardHandler().commandKeyBinding[keys])
-        ed.getKeyboardHandler().bindKey(keys,name);
-    });
-
-    this.fixInputBindings();
-    this.addCommands(emacsH.commands);
-    return this;
-  };
-
-  this.fixInputBindings = function() {
-    // huh?
-    // FIXME! some characters like ` can't be used in key combos b/c ace
-    // escapes them strangely
-    var newBnds = this.commandKeyBinding;
-    Object.keys(newBnds).forEach(function(ea) {
-      if (ea.match(/input/)) newBnds[ea.replace(/input/g, '')] = newBnds[ea];
-    });
-    return this;
-  };
-
   this.update = function() {
     this.commandKeyBinding = {};
+    this.takeOverEmacsBindings();
     this.bindKeys(pareditAce.keybindings);
     this.fixInputBindings();
     return this;
