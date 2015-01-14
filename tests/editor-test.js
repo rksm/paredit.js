@@ -297,6 +297,14 @@ describe('paredit editor', function() {
     edit("delete",{backward: true})
       .transforms('simply deletes numbers', "123|->12|")
       .withChanges([['remove', 2, 1]]);
+
+    edit("delete",{backward: true})
+      .transforms('specials', "a #|b->a |b")
+      .withChanges([['remove', 2, 1]]);
+
+    edit("delete",{backward: true, endIdx: 3})
+      .transforms('specials', "a |#b->a |b")
+      .withChanges([['remove', 2, 1]]);
   });
 
   describe("transpose", function() {
