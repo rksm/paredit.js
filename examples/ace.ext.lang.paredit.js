@@ -539,7 +539,8 @@ function applyPareditChanges(ed, changes, newIndex, indent) {
         start: ed.session.doc.indexToPosition(ea[1]),
         end: ed.session.doc.indexToPosition(ea[1]+ea[2])
       }
-      if (emacs) emacs.killRing.add(ed.session.getTextRange(range));
+      var killRingString = ed.session.getTextRange(range);
+      if (killRingString.length > 1 && emacs) emacs.killRing.add();
       ed.session.remove(range);
     }
   });
