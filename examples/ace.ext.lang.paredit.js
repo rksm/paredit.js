@@ -336,7 +336,6 @@ oop.inherits(KeyHandler, KeyHandlerForCustomizations);
 
   this.update = function() {
     this.commandKeyBinding = {};
-    this.takeOverEmacsBindings();
     this.bindKeys(pareditAce.keybindings);
     this.fixInputBindings();
     return this;
