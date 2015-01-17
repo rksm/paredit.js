@@ -145,9 +145,16 @@ describe('reading sexps', function() {
 
     it("reads it", function() {
       expect(readSeq("`(fred x ~x lst ~@lst 7 8 :nine)"))
-        .deep.equals(["`", ["fred", "x", "~", "x", "lst", "~@", "lst", 7, 8, ":nine"]]);
+        .deep.equals(["`", ["fred", "x", "~", "x", "lst", "~", "@", "lst", 7, 8, ":nine"]]);
     });
 
+  });
+
+  describe('specials', function() {
+    it("reads @s", function() {
+      expect(readSeq("@@a"))
+        .deep.equals(["@", "@", "a"]);
+    });
   });
 
   describe("examples", function() {
@@ -163,6 +170,11 @@ describe('reading sexps', function() {
     it("annotation ", function() {
       expect(readSeq("(def ^private foo)"))
         .deep.equals([["def", "^", "private", "foo"]]);
+    });
+
+    it("no space", function() {
+      expect(readSeq("foo\"bar\""))
+        .deep.equals(["foo", '"bar"']);
     });
 
     it("var quote ", function() {
@@ -285,7 +297,7 @@ describe('reading sexps', function() {
 
 });
 
-describe("parsing access", function() {
+describe("parser", function() {
 
   it("can parse code into an AST", function() {
     var ast = paredit.parse(
@@ -322,4 +334,5 @@ describe("parsing access", function() {
     };
     expect(ast).to.containSubset(expected, d(ast));
   });
+
 });

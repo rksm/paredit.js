@@ -129,7 +129,7 @@
       close = {'[': ']', '(': ')', '{': '}'},
       opening = Object.keys(close),
       closing = opening.map(function(k) { return close[k]; }),
-      symRe = /[^\s\[\]\(\)\{\},]/,
+      symRe = /[^\s\[\]\(\)\{\},"\\`@^#~]/,
       readerSpecials = /[`@^#~]/;
 
   function readSexp(contextStart, input, context, pos, xform) {
@@ -291,13 +291,13 @@
   }
 
   function readReaderSpecials(input, context, pos, xform) {
-    return takeWhile(input, pos,
-      function(c) { return readerSpecials.test(c); },
-      function(read, rest, prevPos, newPos) {
-        var result = callTransform(xform, "special", read, prevPos, newPos);
-        context = context.concat([result]);
-        return {pos: newPos,input:rest,context:context};
-      });
+    var prevPos = clonePos(pos),
+        read = input.slice(0,1),
+        newPos = forward(pos, read),
+        result = callTransform(xform, "special", read, prevPos, newPos),
+        rest = input.slice(1);
+    context = context.concat([result]);
+    return {pos:newPos, input:rest, context: context};
   }
 
   function readJunk(input, context, pos, xform) {
@@ -424,6 +424,26 @@
     sexpRangeExpansion: function(ast, startIdx, endIdx) {
       // startIdx, endIdx define a range. Return the range of the next
       // enclosing sexp.
+
+      // If we have another non-list entity directly to our left or right like
+      // in @*xxx* we select that
+
+      if (startIdx !== endIdx) {
+        // find the entity already selected...
+        var directMatchedStart = last(w.sexpsAt(ast, startIdx, function(n) {
+          return n.start === startIdx; }));
+        var directMatchedEnd = directMatchedStart && last(w.sexpsAt(ast, endIdx, function(n) {
+          return n.end === endIdx; }));
+        if (directMatchedStart && directMatchedEnd) {
+          var directLeft = last(w.sexpsAt(ast, startIdx, function(n) {
+            return n.start < startIdx && !w.hasChildren(n); }));
+          if (directLeft) return [directLeft.start, endIdx];
+          var directRight = last(w.sexpsAt(ast, endIdx, function(n) {
+            return endIdx < n.end && !w.hasChildren(n); }));
+          if (directRight) return [startIdx, directRight.end];
+        }
+      }
+
       var sexp = last(util.flatFilterTree(ast, function(n) {
         if (n.type === 'toplevel') return false;
         if (startIdx === endIdx) return n.start <= startIdx && endIdx <= n.end;
@@ -440,6 +460,7 @@
         if (sexp.start+1 < startIdx || endIdx < sexp.end-1)
           return [sexp.start+1, sexp.end-1]
       }
+      
       return [sexp.start, sexp.end];
     },
 
