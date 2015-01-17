@@ -154,6 +154,14 @@ describe('paredit navigator', function() {
         expect(nav.sexpRangeExpansion(parse("(a aa)"), 1,2)).deep.eq([1,5]);
       });
 
+      it("@@*xxx*->@*@xxx*", function() {
+        expect(nav.sexpRangeExpansion(parse("@@aaa"), 2,5)).deep.eq([1,5]);
+      });
+
+      it("@*@xxx*->*@@xxx*", function() {
+        expect(nav.sexpRangeExpansion(parse("@@aaa"), 1,5)).deep.eq([0,5]);
+      });
+
       it("dont expand to toplevel", function() {
         expect(nav.sexpRangeExpansion(parse(" (a) a"), 1,4)).deep.eq(null);
       });
