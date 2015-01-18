@@ -568,7 +568,7 @@
     ".", "var", "quote", "catch", "throw", "monitor-enter",
 
     'ns', /^def/,/^if/,/^when/,/->/, "while", "for",
-    /^with/, "testing", "while", "cond", "condp"];
+    /^with/, "testing", "while", "cond", "condp", "apply", "doseq", "doall"];
 
   var ed = exports.editor = {
 
@@ -881,14 +881,27 @@
       var outerSexps = w.containingSexpsAt(ast, idx),
           outerLists = outerSexps.filter(function(n) { return w.hasChildren(n); }),
           parent = last(outerLists), sexp = last(outerSexps);
-
+debugger;
       var deleteRange = typeof endIdx === "number";
       if (deleteRange) {
-        var endParent = last(w.containingSexpsAt(ast, endIdx));
+        var endParent = last(w.containingSexpsAt(ast, endIdx, w.hasChildren));
         if (parent !== endParent) return null;
-        var insideNodeStart = last(w.containingSexpsAt(parent, idx));
-        var insideNodeEnd = last(w.containingSexpsAt(parent, endIdx));
-        if (insideNodeStart !== parent || insideNodeEnd !== parent) return null;
+        var insideNodeStart = last(w.sexpsAt(parent, idx));
+        var insideNodeEnd = last(w.sexpsAt(parent, endIdx));
+
+        // don't delete only one " of strings
+        var atStartOfUnsaveDelete = !isSaveToPartialDelete(insideNodeStart) && insideNodeStart.start === idx;
+        var atEndOfUnsaveDelete = !isSaveToPartialDelete(insideNodeEnd) && insideNodeEnd.end === endIdx;
+        if (insideNodeStart === insideNodeEnd
+         && ((atStartOfUnsaveDelete && !atEndOfUnsaveDelete)
+          || (!atStartOfUnsaveDelete && atEndOfUnsaveDelete))) return null;
+        // if (!isSaveToPartialDelete(insideNodeStart) && insideNodeStart.start === idx) return null;
+        // if (!isSaveToPartialDelete(insideNodeEnd) && insideNodeEnd.end === endIdx) return null;
+        if (((insideNodeEnd !== parent && !isSaveToPartialDelete(insideNodeEnd) && !atEndOfUnsaveDelete)
+         || (insideNodeStart !== parent && !isSaveToPartialDelete(insideNodeStart) && !atStartOfUnsaveDelete))
+         && insideNodeStart !== insideNodeEnd) return null;
+        if ((parent.children.indexOf(insideNodeStart) === -1 && insideNodeStart !== parent)
+         || (parent.children.indexOf(insideNodeEnd) === -1 && insideNodeEnd !== parent)) return null;
         var delStart = Math.min(idx, endIdx),
             delEnd = Math.max(idx, endIdx);
         return {changes: [['remove', delStart, delEnd-delStart]], newIndex: delStart}
@@ -908,14 +921,14 @@
 
       if (left && left.length && backward) {
         var n = last(left);
-        if (n.end !== idx || n.type === 'symbol'|| n.type === 'comment' || n.type === 'number' || n.type === 'special') return simpleDelete;
+        if (n.end !== idx || isSaveToPartialDelete(n)) return simpleDelete;
         if (isEmpty(n) || n.type === "char") return deleteSexp(n);
         return noDelete;
       }
 
       if (right && right.length && !backward) {
         var n = right[0];
-        if (n.start !== idx || n.type === 'symbol'|| n.type === 'comment' || n.type === 'number' || n.type === 'special') return simpleDelete;
+        if (n.start !== idx || isSaveToPartialDelete(n)) return simpleDelete;
         if (isEmpty(n) || n.type === "char") return deleteSexp(n);
         return noDelete;
       }
@@ -945,6 +958,10 @@
         return {
           changes: [['remove', sexp.start, sexp.end-sexp.start]],
           newIndex: sexp.start}
+      }
+      function isSaveToPartialDelete(n) {
+        return n.type === 'symbol'|| n.type === 'comment' || n.type === 'number'
+            || n.type === 'special';
       }
     },
 
