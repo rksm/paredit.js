@@ -286,13 +286,29 @@ describe('paredit editor', function() {
       .transforms('deletes empty strings', '"|"->|')
       .withChanges([['remove', 0, 2]]);
 
+    edit("delete",{backward: true, endIdx: 5})
+      .transforms('doesn\'t delete string so that it\'s broken', '"fo|o"->"foo"')
+      .withChanges(null);
+
+    edit("delete",{backward: true, endIdx: 5})
+      .transforms('don\'t cross delete strings', 'a|b "foo"->ab "foo"')
+      .withChanges(null);
+
+    edit("delete",{backward: true, endIdx: 8})
+      .transforms('delete string when deleted completely', 'a|b "foo"->a|')
+      .withChanges([['remove', 1, 7]]);
+
+    edit("delete",{backward: true, endIdx: 4})
+      .transforms('delete range inside string', '"f|oo"->"f|"')
+      .withChanges([['remove', 2, 2]]);
+
     edit("delete",{backward: true, endIdx: 12})
       .transforms('deletes entire sexps when no overlap', "(foo| bar baz)->(foo|)")
       .withChanges([['remove', 4, 8]]);
     
     edit("delete",{backward: true, endIdx: 12})
-      .transforms('no overlap range dels', "(fo|o bar baz)->(foo bar baz)")
-      .withChanges(null);
+      .transforms('no overlap range dels', "(fo|o bar baz)->(fo|)")
+      .withChanges([['remove', 3, 9]]);
       
     edit("delete",{backward: true})
       .transforms('simply deletes numbers', "123|->12|")
@@ -303,8 +319,16 @@ describe('paredit editor', function() {
       .withChanges([['remove', 2, 1]]);
 
     edit("delete",{backward: true, endIdx: 3})
-      .transforms('specials', "a |#b->a |b")
-      .withChanges([['remove', 2, 1]]);
+      .transforms("a|bc->a|")
+      .withChanges([['remove', 1, 2]]);
+
+    edit("delete",{backward: true, endIdx: 4})
+      .transforms("a|b ab->a|b")
+      .withChanges([['remove', 1, 3]]);
+
+    edit("delete",{backward: true, endIdx: 2})
+      .transforms("delete including space", "|a  b->| b")
+      .withChanges([['remove', 0, 2]]);
   });
 
   describe("transpose", function() {
