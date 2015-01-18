@@ -302,7 +302,7 @@ oop.inherits(KeyHandler, KeyHandlerForCustomizations);
 
       if (typeof cmd.command === 'object') {
         cmd = {command: cmd.command.name || cmd.command.command,
-               args: paredit.util.clone(cmd.command.args)}
+               args: paredit.util.clone(cmd.args || cmd.command.args)}
       }
 
       var KEY_MODS = ace.require('ace/lib/keys').KEY_MODS;
@@ -394,12 +394,12 @@ var commands = [
  'transpose', 'closeList'
 ].map(function(name) {
   return {
-     name: 'paredit-' + name,
-     exec: function(ed, args) {
-       ed.session.getMode().getCodeNavigator()[name](ed, args);
-     },
-     multiSelectAction: 'forEach',
-     handlesCount: true
+    name: 'paredit-' + name,
+    exec: function(ed, args) {
+      ed.session.getMode().getCodeNavigator()[name](ed, args);
+    },
+    multiSelectAction: 'forEach',
+    handlesCount: true
   }
 });
 
