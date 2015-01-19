@@ -292,32 +292,6 @@ oop.inherits(KeyHandler, KeyHandlerForCustomizations);
 
 (function() {
 
-  this.handleKeyboard = function (data, hashId, keyString, keyCode) {
-      // ed = that.aceEditor
-      // ed.keyBinding.$callKeyboardHandlers
-      // ed.getKeyboardHandler().commandKeyBinding
-      var cmd = KeyHandlerForCustomizations.prototype.handleKeyboard.call(this, data, hashId, keyString, keyCode);
-
-      if (!cmd || !cmd.command || cmd.command === 'null') return cmd;
-
-      if (typeof cmd.command === 'object') {
-        cmd = {command: cmd.command.name || cmd.command.command,
-               args: paredit.util.clone(cmd.args || cmd.command.args)}
-      }
-
-      var KEY_MODS = ace.require('ace/lib/keys').KEY_MODS;
-      var args = cmd.args || (cmd.args = {});
-      // show(KEY_MODS[hashId]+keyString)
-
-      if (KEY_MODS[hashId].indexOf("shift-") > -1) args.shifted = true;
-      if (data.count) {
-        args.count = data.count;
-        data.count = null;
-      }
-
-      return cmd;
-  };
-
   this.__defineGetter__("commands", function() {
     var cmds = pareditAce.commands.reduce(function(cmds, ea) {
       cmds[ea.name] = ea; return cmds; }, {})
