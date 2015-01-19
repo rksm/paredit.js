@@ -881,7 +881,7 @@
       var outerSexps = w.containingSexpsAt(ast, idx),
           outerLists = outerSexps.filter(function(n) { return w.hasChildren(n); }),
           parent = last(outerLists), sexp = last(outerSexps);
-debugger;
+
       var deleteRange = typeof endIdx === "number";
       if (deleteRange) {
         var endParent = last(w.containingSexpsAt(ast, endIdx, w.hasChildren));
