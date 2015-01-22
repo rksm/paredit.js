@@ -67,6 +67,10 @@ describe('paredit navigator', function() {
         expect(nav.backwardUpSexp(ast, 21)).eq(21);
       });
 
+      it('(.".|.")->|(.|"..")', function() {
+        expect(nav.backwardUpSexp(parse('(a"xx")'), 4)).eq(2);
+      });
+
     });
   });
 
