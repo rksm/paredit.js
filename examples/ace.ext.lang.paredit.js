@@ -228,6 +228,7 @@ var CodeNavigator = {
 
   delete: function(ed, args) {
     args = args || {};
+    if (paredit.freeEdits) args.freeEdits = true;
     var data = this.prepareForSourceTransform(ed,args);
     if (!data.ast) return;
     if (data.selStart !== data.selEnd) args.endIdx = data.selEnd;
@@ -252,6 +253,9 @@ var CodeNavigator = {
     // FIXME: this is too complex for the ace integration, move to
     // paredit.editor!
     args = args || {};
+    
+    if (paredit.freeEdits) args.freeEdits = true;
+
     var open = args.open || '(', close = args.close || ')';
 
     var data = this.prepareForSourceTransform(ed,args);
@@ -264,6 +268,10 @@ var CodeNavigator = {
   },
 
   closeList: function(ed, args) {
+    args = args || {};
+    
+    if (paredit.freeEdits) args.freeEdits = true;
+
     var data = this.prepareForSourceTransform(ed,args);
     if (args.freeEdits || !data.ast || (data.ast.errors && data.ast.errors.length) 
      || !this.clojureSexpMovement(ed, "closeList", args)) {
