@@ -401,9 +401,10 @@
     },
 
     backwardUpSexp: function(ast, idx) {
-      var containing = w.sexpsAt(ast, idx,
+      var containing = w.containingSexpsAt(ast, idx,
         function(n) { return n.type === 'list'
-          && n.start !== idx && n.end !== idx; });
+                   || n.type === 'string'
+                   || n.type === 'comment'; });
       if (!containing || !containing.length) return idx;
       return last(containing).start;
     },
@@ -608,11 +609,11 @@
     },
 
     openList: function(ast, src, idx, args) {
-      args = args || {}
+      args = args || {};
       var count = args.count || 1;
       var open = args.open || '(', close = args.close || ')';
-      
-      if (ast.errors && ast.errors.length) return {
+
+      if (args.freeEdits || ast.errors && ast.errors.length) return {
         changes: [["insert", idx, open]],
         newIndex: idx+open.length
       }
@@ -885,7 +886,7 @@
           backward = !!args.backward,
           endIdx = args.endIdx; // for text ranges
 
-      if (ast.errors && ast.errors.length) {
+      if (args.freeEdits || ast.errors && ast.errors.length) {
         return endIdx ? {
           changes: [["remove", idx, endIdx-idx]],
           newIndex: idx
