@@ -65,7 +65,7 @@ function edit(methodName/*,args*/) {
           });
         },
       }
-      
+
     },
   }
 }
@@ -101,6 +101,10 @@ describe('paredit editor', function() {
     edit('openList', {endIdx: 7})
       .transforms('(a |b (c d))->(a (|)b (c d))')
       .withChanges([['insert', 3, "()"]]);
+
+    edit('openList', {})
+      .transforms('simple insertion with error', 'a |())->a (|())')
+      .withChanges([['insert', 2, "("]]);
   });
 
   describe("splitting", function() {
@@ -115,7 +119,7 @@ describe('paredit editor', function() {
     edit('splitSexp', "[]", 1)
       .transforms("uses correct paren for change","[|]->[]| []")
       .withChanges([["insert", 1, "] ["]]);
-    
+
     describe("strings", function() {
       edit("splitSexp",'"foo"', 3)
         .transforms('"fo|o"->"fo"| "o"')
@@ -136,7 +140,7 @@ describe('paredit editor', function() {
       .withChanges(
         [['insert', 0, "("],
          ['insert', 2, ")"]]);
-    
+
     edit("wrapAround",'(', ')', {count: 2})
       .transforms("|a bb->(|a bb)")
       .withChanges(
@@ -195,7 +199,7 @@ describe('paredit editor', function() {
   });
 
   describe("closeAndNewline", function() {
-    
+
     edit("closeAndNewline")
       .transforms(" (aa| bb)-> (aa bb)\n |")
       .withChanges([['insert', 8, "\n "]]);
@@ -219,7 +223,7 @@ describe('paredit editor', function() {
         [['remove', 18, 1],
          ['insert', 14, ')']]);
   });
-  
+
   describe("slurpSexp", function() {
     edit("slurpSexp", {backward: false, count: 2})
       .transforms("forward: ", "(a (a |b) c d)->(a (a |b c d))")
@@ -243,11 +247,11 @@ describe('paredit editor', function() {
     edit("killSexp",{backward: true, count: 2})
       .transforms("backward: ","(a |b c d)->(|b c d)")
       .withChanges([['remove', 1, 2]]);
-    
+
     edit("killSexp",{backward: true})
       .transforms("string: ",'("fo|o" b)->("|o" b)')
       .withChanges([['remove', 2, 2]]);
-    
+
     edit("killSexp",{backward: true})
       .transforms('fo|o->|o')
       .withChanges([['remove', 0, 2]]);
@@ -305,11 +309,11 @@ describe('paredit editor', function() {
     edit("delete",{backward: true, endIdx: 12})
       .transforms('deletes entire sexps when no overlap', "(foo| bar baz)->(foo|)")
       .withChanges([['remove', 4, 8]]);
-    
+
     edit("delete",{backward: true, endIdx: 12})
       .transforms('no overlap range dels', "(fo|o bar baz)->(fo|)")
       .withChanges([['remove', 3, 9]]);
-      
+
     edit("delete",{backward: true})
       .transforms('simply deletes numbers', "123|->12|")
       .withChanges([['remove', 2, 1]]);
@@ -329,6 +333,17 @@ describe('paredit editor', function() {
     edit("delete",{backward: true, endIdx: 2})
       .transforms("delete including space", "|a  b->| b")
       .withChanges([['remove', 0, 2]]);
+
+    describe("with errors", function() {
+      edit("delete",{backward: true})
+        .transforms("allow simple delete", "fo(|o->fo|o")
+        .withChanges([['remove', 2, 1]]);
+
+      edit("delete",{backward: false, endIdx: 4})
+        .transforms("allow simple range delete", "a |((x) x|->a |x) x")
+        .withChanges([['remove', 2, 2]]);
+    })
+
   });
 
   describe("transpose", function() {

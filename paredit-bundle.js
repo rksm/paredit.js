@@ -347,7 +347,7 @@
   function printPos(pos) { return JSON.stringify(pos); }
 
   function readline(input) {
-    var endIdx = input.indexOf("\n")
+    var endIdx = input.indexOf("\n");
     endIdx = endIdx > -1 ? endIdx+1 : input.length;
     var read = input.slice(0, endIdx);
     var rest = input.slice(endIdx);
@@ -356,6 +356,7 @@
 
   function forward(pos, read) {
     // note: pos is deliberately transient for performance
+    if (!read) return pos;
     pos.idx += read.length;
     var lines = read.split("\n");
     var ll = lines.length;
@@ -610,6 +611,12 @@
       args = args || {}
       var count = args.count || 1;
       var open = args.open || '(', close = args.close || ')';
+      
+      if (ast.errors && ast.errors.length) return {
+        changes: [["insert", idx, open]],
+        newIndex: idx+open.length
+      }
+
       var containing = w.containingSexpsAt(ast, idx);
       var l = last(containing);
       if (l && l.type === "comment" || l.type === "string")
@@ -877,6 +884,17 @@
       var count = args.count || 1,
           backward = !!args.backward,
           endIdx = args.endIdx; // for text ranges
+
+      if (ast.errors && ast.errors.length) {
+        return endIdx ? {
+          changes: [["remove", idx, endIdx-idx]],
+          newIndex: idx
+        } : {
+          changes: [["remove", backward ? idx-count : idx, count]],
+          newIndex: backward ? idx-count : idx
+        }
+      }
+
 
       var outerSexps = w.containingSexpsAt(ast, idx),
           outerLists = outerSexps.filter(function(n) { return w.hasChildren(n); }),

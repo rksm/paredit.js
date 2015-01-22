@@ -265,8 +265,11 @@ var CodeNavigator = {
 
   closeList: function(ed, args) {
     var data = this.prepareForSourceTransform(ed,args);
-    if (!this.clojureSexpMovement(ed, "closeList", args)) {
-      applyPareditChanges(ed, [["insert", data.pos,args.close]], data.pos+args.close.length);
+    if (!data.ast || (data.ast.errors && data.ast.errors.length) 
+     || !this.clojureSexpMovement(ed, "closeList", args)) {
+      applyPareditChanges(ed, [
+        ["insert", data.pos,args.close]],
+        data.pos+args.close.length);
     }
   }
 };
@@ -525,7 +528,8 @@ function applyPareditChanges(ed, changes, newIndex, indent) {
 
   if (!indent) ed.session.markUndoGroup();
   else {
-    ed.session.$ast = paredit.parse(ed.getValue(), {addSourceForLeafs: true});
+    var ast = ed.session.$ast = paredit.parse(ed.getValue(), {addSourceForLeafs: true});
+    if (!ast || (ast.errors && ast.errors.length)) return;
     var indentStart = typeof indent === "object" ?
           indent.start : changes[0][1],
         indentEnd = typeof indent === "object" ?
