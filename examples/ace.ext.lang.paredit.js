@@ -265,7 +265,7 @@ var CodeNavigator = {
 
   closeList: function(ed, args) {
     var data = this.prepareForSourceTransform(ed,args);
-    if (!data.ast || (data.ast.errors && data.ast.errors.length) 
+    if (args.freeEdits || !data.ast || (data.ast.errors && data.ast.errors.length) 
      || !this.clojureSexpMovement(ed, "closeList", args)) {
       applyPareditChanges(ed, [
         ["insert", data.pos,args.close]],

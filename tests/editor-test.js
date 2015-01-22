@@ -102,9 +102,18 @@ describe('paredit editor', function() {
       .transforms('(a |b (c d))->(a (|)b (c d))')
       .withChanges([['insert', 3, "()"]]);
 
-    edit('openList', {})
-      .transforms('simple insertion with error', 'a |())->a (|())')
-      .withChanges([['insert', 2, "("]]);
+    describe("with errors", function() {
+      edit('openList', {})
+        .transforms('a |())->a (|())')
+        .withChanges([['insert', 2, "("]]);
+    });
+    
+    describe("with paredit correction disabled", function() {
+      edit('openList', {freeEdits: true})
+        .transforms('a |(())->a (|(())')
+        .withChanges([['insert', 2, "("]]);
+    });
+
   });
 
   describe("splitting", function() {
@@ -342,7 +351,17 @@ describe('paredit editor', function() {
       edit("delete",{backward: false, endIdx: 4})
         .transforms("allow simple range delete", "a |((x) x|->a |x) x")
         .withChanges([['remove', 2, 2]]);
-    })
+    });
+
+    describe("with paredit correction disabled", function() {
+      edit("delete",{backward: true, freeEdits: true})
+        .transforms("fo(|o)->fo|o)")
+        .withChanges([['remove', 2, 1]]);
+
+      edit("delete",{backward: false, endIdx: 4, freeEdits: true})
+        .transforms("a |((x)) x|->a |x)) x")
+        .withChanges([['remove', 2, 2]]);
+    });
 
   });
 
