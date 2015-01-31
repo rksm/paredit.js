@@ -569,8 +569,12 @@
     /^let/, /^import/, "new", /^deftype/, /^let/, "fn", "recur", "set!",
     ".", "var", "quote", "catch", "throw", "monitor-enter",
 
-    'ns', /^def/,/^if/,/^when/,/->/, "while", "for",
-    /^with/, "testing", "while", "cond", "condp", "apply", "doseq", "doall"];
+    'ns', 'in-ns', /^def/,/^if/,/^when/,/->/, "while", "for",
+    /^with/, "testing", "while", "cond", "condp", "apply", "doseq", "doall",
+    "binding",
+    
+    // midje
+    "facts"];
 
   var ed = exports.editor = {
 
