@@ -35,7 +35,7 @@ function load() {
   });
 };
 
-var supportedModes = ['ace/mode/lisp', 'ace/mode/clojure'];
+var supportedModes = ['ace/mode/lisp', 'ace/mode/clojure', 'ace/mode/clojurescript'];
 function isActiveFor(mode) {
   return mode && pareditAce.supportedModes.indexOf(mode.$id) > -1;
 }
