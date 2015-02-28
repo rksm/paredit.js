@@ -565,12 +565,12 @@
 
   // (map (comp name first) (seq clojure.lang.Compiler/specials))
   exports.specialForms = [
-    "&", "monitor-exit", /^case/, "try", /^reify/, "finally", /^(.*-)?loop/, "do",
-    /^let/, /^import/, "new", /^deftype/, /^let/, "fn", "recur", "set!",
+    "&", "monitor-exit", /^case/, "try", /^reify/, "finally", /^(.*-)?loop/, /^do/,
+    /^let/, /^import/, "new", /^deftype/, /^let/, "fn", "recur", /^set.*!$/,
     ".", "var", "quote", "catch", "throw", "monitor-enter",
 
     'ns', 'in-ns', /^([^\/]+\/)?def/,/^if/,/^when/,/->/, "while", "for",
-    /^with/, "testing", "while", "cond", "condp", "apply", "doseq", "doall",
+    /(^|\/)with/, "testing", "while", "cond", "condp", "apply",
     "binding",
     
     // midje
