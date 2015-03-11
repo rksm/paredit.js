@@ -33,6 +33,10 @@ describe('paredit navigator', function() {
         expect(nav.forwardSexp(ast, 4)).eq(8);
       });
 
+      it("a|aa->aaa|", function() { 
+        expect(nav.forwardSexp(ast, 2)).eq(4);
+      });
+
     });
 
     describe("backwardSexp", function() {
@@ -45,6 +49,10 @@ describe('paredit navigator', function() {
 
       it("(...) |->|(...)", function() { 
         expect(nav.backwardSexp(ast, 5)).eq(1);
+      });
+
+      it("aa|a->|aaa", function() { 
+        expect(nav.backwardSexp(ast, 3)).eq(1);
       });
 
     });
