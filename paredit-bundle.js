@@ -823,19 +823,20 @@
       var backward = args && args.backward;
       var sexps = w.containingSexpsAt(ast,idx, w.hasChildren);
       if (!sexps.length) return null;
-      var parent = last(sexps);
+      var parent = last(sexps), inner = last(w.containingSexpsAt(ast,idx));
+      if (inner === parent) inner = null;
       if (backward) {
         var left = leftSiblings(parent, idx);
         if (!left.length) return null;
         var changes = [
-          ['insert', left[1] ? left[1].start : idx, parent.open],
+          ['insert', left[1] ? left[1].start : (inner ? inner.start : idx), parent.open],
           ['remove', parent.start, parent.open.length]];
       } else {
         var right = rightSiblings(parent, idx);
         if (!right.length) return;
         var changes = [
           ['remove', parent.end-parent.close.length, parent.close.length],
-          ['insert', right[right.length-2] ? right[right.length-2].end : idx, parent.close]];
+          ['insert', right[right.length-2] ? right[right.length-2].end : (inner ? inner.end : idx), parent.close]];
       }
       return {changes: changes, newIndex: idx};
     },

@@ -231,6 +231,18 @@ describe('paredit editor', function() {
       .withChanges(
         [['remove', 18, 1],
          ['insert', 14, ')']]);
+
+    edit("barfSexp", {backward: false})
+      .transforms("forward: ", "(fo|o bar)->(fo|o) bar")
+      .withChanges(
+        [['remove', 8, 1],
+         ['insert', 4, ')']]);
+
+    edit("barfSexp", {backward: true})
+      .transforms("forward: ", "(foo b|ar)->foo (b|ar)")
+      .withChanges(
+        [['insert', 5, '('],
+         ['remove', 0, 1]]);
   });
 
   describe("slurpSexp", function() {
@@ -239,7 +251,6 @@ describe('paredit editor', function() {
       .withChanges(
         [['insert', 12, ')'],
          ['remove', 7, 1]]);
-
 
     edit("slurpSexp", {backward: true, count: 2})
       .transforms("backward: ", "(x y z (a |b) c d)->(x (y z a |b c d))")
