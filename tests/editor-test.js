@@ -379,17 +379,20 @@ describe('paredit editor', function() {
   describe("transpose", function() {
 
     edit("transpose",{})
-      .transforms("(xxx |yyy)->(xxx yyy|)")
+      .transforms("(xxx |yyy)->(xxx |yyy)")
       .withChanges([['insert', 8, " xxx"],['remove', 1, 4]]);
 
     edit("transpose",{})
-      .transforms("((a)|(b))->((a) (b)|)")
-      .withChanges([['insert', 7, " (a)"],['remove', 1, 3]]);
+      .transforms("((a)|(b))->((b)|(a))")
+      .withChanges([['insert', 7, "(a)"],['remove', 1, 3]]);
 
     edit("transpose",{}).transforms("(|yyy)->(yyy)").withChanges(null);
 
     edit("transpose",{}).transforms("( | )->(  )").withChanges(null);
 
+    edit("transpose",{})
+      .transforms("aaaaa|\n\nbbb->bbb|\n\naaaaa")
+      .withChanges([['insert', 10, "\n\naaaaa"],['remove', 0, 7]]);
   });
 
   describe("rewrite ast", function() {

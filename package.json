@@ -1,6 +1,6 @@
 {
   "name": "paredit.js",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "description": "Generic parser and editor for s-expressions.",
   "main": "index.js",
   "scripts": {
