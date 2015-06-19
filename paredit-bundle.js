@@ -578,7 +578,7 @@
     'ns', 'in-ns', /^([^\/]+\/)?def/,/^if/,/^when/,/->/, "while", "for",
     /(^|\/)with/, "testing", "while", "cond", "condp", "apply",
     "binding", "locking", "proxy", "reify", /^extend/,
-    
+
     // midje
     "facts"];
 
@@ -705,15 +705,15 @@
 
       if (backward) {
         var left = leftSiblings(last(sexps), idx);
-        var killed = this.killSexp(ast, src, idx/*last(left).end*/,
+        var killed = ed.killSexp(ast, src, idx/*last(left).end*/,
           {count: left.length, backward: true})
       } else {
         var right = rightSiblings(last(sexps), idx);
-        var killed = this.killSexp(ast, src, idx/*last(right).end*/,
+        var killed = ed.killSexp(ast, src, idx/*last(right).end*/,
           {count: right.length, backward: false})
       }
 
-      var spliced = this.spliceSexp(ast,src,idx);
+      var spliced = ed.spliceSexp(ast,src,idx);
 
       if (!killed) return spliced;
       if (!spliced) return killed;
