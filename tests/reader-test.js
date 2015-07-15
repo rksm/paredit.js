@@ -335,4 +335,13 @@ describe("parser", function() {
     expect(ast).to.containSubset(expected, d(ast));
   });
 
+  it("can read a lot of code", function() {
+    var code = "(in-package :cl-user)\n\n"
+             + "(defmethod really-big-function ()";
+    for (var i = 0; i < 3000; i++)
+      code += "\n  (do-something-else '" + i + ")";
+    code += "\n  (finally-the-end))";
+    var ast = paredit.parse(code);
+    expect(ast.children[1].children).to.have.length(3004);
+  });
 });
