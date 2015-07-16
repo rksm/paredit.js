@@ -212,11 +212,13 @@
   function readSeq(contextStart, input, context, pos, xform) {
     var result, counter = 0;
     while (true) {
-      counter++; if (counter > 10000) throw new Error("endless loop at " + printPos(pos));
+      var startRow = pos.row, startCol = pos.column;
       result = readSexp(contextStart, input, context, pos, xform);
       input = result.input; context = result.context; pos = result.pos;
-      if (result.flag === eoinput || (result.flag === eosexp && (contextStart || !input.length)))
-        break;
+      var endReached = result.flag === eoinput || (result.flag === eosexp && (contextStart || !input.length));
+      if (!endReached && pos.row <= startRow && pos.column <= startCol)
+        throw new Error("paredit reader cannot go forward at " + printPos(pos) + " with input " + input);
+      if (endReached) break;
 
       // if (result.flag === eosexp && !contextStart)
       //   result = readJunk(input, context, pos, xform);
@@ -575,7 +577,7 @@
     /^let/, /^import/, "new", /^deftype/, /^let/, "fn", "recur", /^set.*!$/,
     ".", "var", "quote", "catch", "throw", "monitor-enter",
 
-    'ns', 'in-ns', /^([^\/]+\/)?def/,/^if/,/^when/,/->/, "while", "for",
+    'ns', 'in-ns', /^([^\/]+\/)?def/,/^if/,/^when/,/^unless/, "while", "for",
     /(^|\/)with/, "testing", "while", "cond", "condp", "apply",
     "binding", "locking", "proxy", "reify", /^extend/,
 

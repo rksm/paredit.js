@@ -107,7 +107,7 @@ describe('paredit editor', function() {
         .transforms('a |())->a (|())')
         .withChanges([['insert', 2, "("]]);
     });
-    
+
     describe("with paredit correction disabled", function() {
       edit('openList', {freeEdits: true})
         .transforms('a |(())->a (|(())')
@@ -445,6 +445,12 @@ describe('paredit editor', function() {
 
     it("indents multiple toplevel sexps at once", function() {
       expectIndent("(\n)\n(\n)", "(\n )\n(\n )");
+    });
+
+    it("indents threading macros", function() {
+      expectIndent("(-> foo\nbar\nbaz)", "(-> foo\n    bar\n    baz)");
+      expectIndent("(->> foo\nbar\nbaz)", "(->> foo\n     bar\n     baz)");
+      expectIndent("(->\nfoo\nbar\nbaz)", "(->\n foo\n bar\n baz)");
     });
 
   });
