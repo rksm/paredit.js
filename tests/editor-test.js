@@ -453,5 +453,9 @@ describe('paredit editor', function() {
       expectIndent("(->\nfoo\nbar\nbaz)", "(->\n foo\n bar\n baz)");
     });
 
+    it("indents doto", function() {
+      expectIndent("(doto com.foo.Bar\n(.setBaz))", "(doto com.foo.Bar\n      (.setBaz))");
+    });
+
   });
 });
