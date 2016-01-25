@@ -74,6 +74,7 @@ var CodeNavigator = {
       var moveToPos = ed.session.doc.indexToPosition(moveToIdx),
           method = (data.isSelecting ? 'select' : 'moveCursor') + 'ToPosition';
       ed.selection[method](moveToPos);
+      ed.renderer.scrollCursorIntoView();
       return true;
   },
 
