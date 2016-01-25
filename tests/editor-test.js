@@ -447,5 +447,9 @@ describe('paredit editor', function() {
       expectIndent("(\n)\n(\n)", "(\n )\n(\n )");
     });
 
+    it("keeps indentation of strings", function() {
+      expectIndent('(defn foo\n"hello\n      world"\n[]\n5)', '(defn foo\n  "hello\n      world"\n  []\n  5)');
+    });
+
   });
 });

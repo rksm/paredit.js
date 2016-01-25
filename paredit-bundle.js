@@ -6,9 +6,10 @@
   var isNodejs = typeof module !== "undefined" && module.require;
   var exports = isNodejs ? module.exports : (window.paredit = {});
   if (isNodejs) {
-    exports.reader    = module.require("./lib/reader").reader;
-    exports.navigator = module.require("./lib/navigator").navigator;
-    exports.editor    = module.require("./lib/editor").editor;
+    exports.reader       = module.require("./lib/reader").reader;
+    exports.navigator    = module.require("./lib/navigator").navigator;
+    exports.editor       = module.require("./lib/editor").editor;
+    exports.specialForms = module.require("./lib/editor").specialForms;
   }
 
   exports.parse = function(src, options) {
@@ -212,11 +213,13 @@
   function readSeq(contextStart, input, context, pos, xform) {
     var result, counter = 0;
     while (true) {
-      counter++; if (counter > 10000) throw new Error("endless loop at " + printPos(pos));
+      var startRow = pos.row, startCol = pos.column;
       result = readSexp(contextStart, input, context, pos, xform);
       input = result.input; context = result.context; pos = result.pos;
-      if (result.flag === eoinput || (result.flag === eosexp && (contextStart || !input.length)))
-        break;
+      var endReached = result.flag === eoinput || (result.flag === eosexp && (contextStart || !input.length));
+      if (!endReached && pos.row <= startRow && pos.column <= startCol)
+        throw new Error("paredit reader cannot go forward at " + printPos(pos) + " with input " + input);
+      if (endReached) break;
 
       // if (result.flag === eosexp && !contextStart)
       //   result = readJunk(input, context, pos, xform);
@@ -575,7 +578,7 @@
     /^let/, /^import/, "new", /^deftype/, /^let/, "fn", "recur", /^set.*!$/,
     ".", "var", "quote", "catch", "throw", "monitor-enter",
 
-    'ns', 'in-ns', /^([^\/]+\/)?def/,/^if/,/^when/,/->/, "while", "for",
+    'ns', 'in-ns', /^([^\/]+\/)?def/,/^if/,/^when/,/^unless/,/->/, "while", "for",
     /(^|\/)with/, "testing", "while", "cond", "condp", "apply",
     "binding", "locking", "proxy", "reify", /^extend/,
 
@@ -1009,7 +1012,8 @@
             src = indent.src;
 
         var outerSexps = w.containingSexpsAt(ast, idx, w.hasChildren),
-            parent = last(outerSexps);
+            parent = last(outerSexps),
+            sexpAtBol = parent && last(w.sexpsAt(ast, idx));
 
         if (!parent) return {
           idx: idx+line.length+1,
@@ -1020,7 +1024,8 @@
         // whitespace at bol that needs to be "removed"
         var ws = line.match(/^\s*/)[0],
             // figure out much whitespace we need to add
-            indentOffset = computeIndentOffset(src, parent, idx) - ws.length,
+            indentOffset = sexpAtBol.type === 'string' && idx > sexpAtBol.start ?
+              0 : computeIndentOffset(src, parent, idx) - ws.length,
             lineLength = line.length + indentOffset;
 
         // record what needs to be changed and update source
