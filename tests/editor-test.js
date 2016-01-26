@@ -297,7 +297,11 @@ describe('paredit editor', function() {
     edit("delete",{backward: true})
       .transforms("deletes empty lists backward but only at beginning", "( |)->(|)")
       .withChanges([['remove', 1, 1]]);
-;
+
+    edit("delete",{backward: true})
+      .transforms("moves cursor backwards", "(())|->(()|)")
+      .withChanges([]);
+
     edit("delete",{backward: false})
       .transforms("deletes empty lists forward","(|)->|")
       .withChanges([['remove', 0, 2]]);
