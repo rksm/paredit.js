@@ -451,5 +451,9 @@ describe('paredit editor', function() {
       expectIndent('(defn foo\n"hello\n      world"\n[]\n5)', '(defn foo\n  "hello\n      world"\n  []\n  5)');
     });
 
+    it("keeps indentation of strings", function() {
+      expectIndent('(defun foo (x)\n  (* x x))\n\n', '(defun foo (x)\n  (* x x))\n\n');
+    });
+
   });
 });
