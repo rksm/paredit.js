@@ -1024,8 +1024,10 @@
         // whitespace at bol that needs to be "removed"
         var ws = line.match(/^\s*/)[0],
             // figure out much whitespace we need to add
-            indentOffset = sexpAtBol.type === 'string' && idx > sexpAtBol.start ?
-              0 : computeIndentOffset(src, parent, idx) - ws.length,
+            indentOffset = sexpAtBol
+                        && sexpAtBol.type === 'string'
+                        && idx > sexpAtBol.start ?
+                          0 : computeIndentOffset(src, parent, idx) - ws.length,
             lineLength = line.length + indentOffset;
 
         // record what needs to be changed and update source
