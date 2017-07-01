@@ -1,12 +1,12 @@
 /*global process, beforeEach, afterEach, describe, it*/
 
-var isNodejs = typeof module !== "undefined" && module.require;
-var paredit = isNodejs ? module.require("../index") : window.paredit;
+var isNodejs = typeof module !== "undefined" && module.exports;
+var paredit = isNodejs ? require("../index") : window.paredit;
 
 var expect, i;
 if (isNodejs) {
-  var chai = module.require('chai');
-  chai.use(module.require('chai-subset'));
+  var chai = require('chai');
+  chai.use(require('chai-subset'));
   expect = chai.expect;
 } else { expect = window.chai.expect; }
 
@@ -21,7 +21,7 @@ describe('paredit navigator', function() {
   var ast = parse("(aaa bbb [cc dddd e]) ()");
 
   describe("basic movements", function() {
-    
+
     describe("forwardSexp", function() {
 
       it("|(...)->(...)|", function() {
@@ -29,11 +29,11 @@ describe('paredit navigator', function() {
         expect(nav.forwardSexp(ast, 1)).eq(4);
       });
 
-      it("| (...)->(...)|", function() { 
+      it("| (...)->(...)|", function() {
         expect(nav.forwardSexp(ast, 4)).eq(8);
       });
 
-      it("a|aa->aaa|", function() { 
+      it("a|aa->aaa|", function() {
         expect(nav.forwardSexp(ast, 2)).eq(4);
       });
 
@@ -47,11 +47,11 @@ describe('paredit navigator', function() {
         expect(nav.backwardSexp(ast, 4)).eq(1);
       });
 
-      it("(...) |->|(...)", function() { 
+      it("(...) |->|(...)", function() {
         expect(nav.backwardSexp(ast, 5)).eq(1);
       });
 
-      it("aa|a->|aaa", function() { 
+      it("aa|a->|aaa", function() {
         expect(nav.backwardSexp(ast, 3)).eq(1);
       });
 
@@ -83,7 +83,7 @@ describe('paredit navigator', function() {
   });
 
   describe("list navigation", function() {
-    
+
     describe(")", function() {
 
       it("(..|.)->(...)|", function() {
@@ -110,17 +110,17 @@ describe('paredit navigator', function() {
   });
 
   describe("sexp boundaries", function() {
-    
+
     describe('range for idx', function() {
       it("...xxx|...->...*xxx*...", function() {
         expect(nav.sexpRange(parse("  aaa  "), 5)).deep.eq([2,5]);
       });
-  
+
       it("(xxx|)->(*xxx*)", function() {
         expect(nav.sexpRange(parse("(aa)"), 3)).deep.eq([1,3]);
         expect(nav.sexpRange(parse("(aa bbb)"), 3)).deep.eq([1,3]);
       });
-  
+
       it(".(xxx.|.)..->..(*xxx..*)..", function() {
         expect(nav.sexpRange(parse(" (aaa  ) "), 6)).deep.eq([2,7]);
       });
@@ -137,11 +137,11 @@ describe('paredit navigator', function() {
       it('".|."->"*...*"', function() {
         expect(nav.sexpRange(parse('"foo"'), 2)).deep.eq([1,4]);
       });
-  
+
       it("ignores toplevel", function() {
         expect(nav.sexpRange(parse("a  a"), 2)).deep.eq(null);
       });
-      
+
     })
 
     describe("expansion", function() {

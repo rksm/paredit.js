@@ -5,14 +5,14 @@
 // If not on nodejs: concat or load lib files after loading this files.
 
 (function() {
-  var isNodejs = typeof module !== "undefined" && module.require,
+  var isNodejs = typeof module !== "undefined" && module.exports,
       exports = isNodejs ? module.exports : (window.paredit = {});
 
   if (isNodejs) {
-    exports.reader       = module.require("./lib/reader").reader;
-    exports.navigator    = module.require("./lib/navigator").navigator;
-    exports.editor       = module.require("./lib/editor").editor;
-    exports.specialForms = module.require("./lib/editor").specialForms;
+    exports.reader       = require("./lib/reader").reader;
+    exports.navigator    = require("./lib/navigator").navigator;
+    exports.editor       = require("./lib/editor").editor;
+    exports.specialForms = require("./lib/editor").specialForms;
   }
 
   exports.parse = function(src, options) {
@@ -52,7 +52,7 @@
 "format global";
 
 ;(function(run) {
-  var isNodejs = typeof module !== "undefined" && module.require;
+  var isNodejs = typeof module !== "undefined" && module.exports;
   var exports = isNodejs ? module.exports : window.paredit;
   run(exports);
 
@@ -63,11 +63,11 @@
       if (arguments.length > 1) {
         return util.merge(Array.prototype.slice.call(arguments));
       }
-  
+
       if (Array.isArray(objs[0])) { // test for all?
         return Array.prototype.concat.apply([], objs);
       }
-  
+
       return objs.reduce(function(merged, ea) {
         for (var name in ea)
           if (ea.hasOwnProperty(name))
@@ -117,7 +117,7 @@
 "format global";
 
 ;(function(run) {
-  var isNodejs = typeof module !== "undefined" && module.require;
+  var isNodejs = typeof module !== "undefined" && module.exports;
   var exports = isNodejs ? module.exports : window.paredit;
   run(exports);
 })(function(exports) {
@@ -388,9 +388,9 @@
 "format global";
 
 ;(function(run) {
-  var isNodejs = typeof module !== "undefined" && module.require;
+  var isNodejs = typeof module !== "undefined" && module.exports;
   var exports = isNodejs ? module.exports : window.paredit;
-  var util = isNodejs ? module.require('./util').util : window.paredit.util;
+  var util = isNodejs ? require('./util').util : window.paredit.util;
   run(util, exports);
 
 })(function(util, exports) {
@@ -486,7 +486,7 @@
         if (sexp.start+1 < startIdx || endIdx < sexp.end-1)
           return [sexp.start+1, sexp.end-1]
       }
-      
+
       return [sexp.start, sexp.end];
     },
 
@@ -585,11 +585,11 @@
 "format global";
 
 ;(function(run) {
-  var isNodejs = typeof module !== "undefined" && module.require;
+  var isNodejs = typeof module !== "undefined" && module.exports;
   var exports = isNodejs ? module.exports : window.paredit;
-  var util = isNodejs ? module.require('./util').util : window.paredit.util;
-  var nav = isNodejs ? module.require("./navigator").navigator : window.paredit.navigator;
-  var w = isNodejs ? module.require("./navigator").walk : window.paredit.walk;
+  var util = isNodejs ? require('./util').util : window.paredit.util;
+  var nav = isNodejs ? require("./navigator").navigator : window.paredit.navigator;
+  var w = isNodejs ? require("./navigator").walk : window.paredit.walk;
   run(nav, w, util, exports);
 
 })(function(nav, w, util, exports) {
