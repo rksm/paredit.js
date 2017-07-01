@@ -1,10 +1,13 @@
 /*global window, process, global, module*/
 
+"format global";
+
 // If not on nodejs: concat or load lib files after loading this files.
 
 (function() {
-  var isNodejs = typeof module !== "undefined" && module.require;
-  var exports = isNodejs ? module.exports : (window.paredit = {});
+  var isNodejs = typeof module !== "undefined" && module.require,
+      exports = isNodejs ? module.exports : (window.paredit = {});
+
   if (isNodejs) {
     exports.reader       = module.require("./lib/reader").reader;
     exports.navigator    = module.require("./lib/navigator").navigator;
@@ -22,11 +25,12 @@
       var result = {type: type, start: start.idx, end: end.idx};
       if (type === "error") {
         result.error = read.error;
+        if (read.children) result.children = read.children;
         errors.push(result);
       } else if (addSrc && type !== 'list')
         result.source = src.slice(result.start, result.end);
       if (type === "list") result.children = read;
-      if (type === "list" || type === "string") {
+      if (type === "list" || type === "string" || (type === "error" && args)) {
         result.open = args.open;
         result.close = args.close;
       }
@@ -42,7 +46,10 @@
   };
 
 })();
-/*global window, process, global*/
+
+/*global window, process, global,module*/
+
+"format global";
 
 ;(function(run) {
   var isNodejs = typeof module !== "undefined" && module.require;
@@ -104,7 +111,10 @@
   }
 
 });
-/*global window, process, global*/
+
+/*global window, process, global,module*/
+
+"format global";
 
 ;(function(run) {
   var isNodejs = typeof module !== "undefined" && module.require;
@@ -178,7 +188,8 @@
     if (opening.indexOf(ch) > -1) {
       var startPos = clonePos(pos),
           nested = readSeq(ch, input.slice(1), Object.freeze([]), forward(pos, ch), xform),
-          nextCh = nested.input[0];
+          nextCh = nested.input[0],
+          brackets = {open: ch, close: close[ch]};
 
       var sexp, endPos;
       if (nextCh !== close[ch]) {
@@ -186,13 +197,13 @@
             errMsg = "Expected '" + close[ch] + "'"
                    + (nextCh ? " but got '" + nextCh + "'" :
                       " but reached end of input"),
-            err = readError(errMsg, startPos, errPos);
-        sexp = callTransform(xform, "error", err, startPos, errPos);
+            children = nested.context,
+            err = readError(errMsg, startPos, errPos, children);
+        sexp = callTransform(xform, "error", err, startPos, errPos, brackets);
         endPos = nextCh ? forward(nested.pos, nextCh) : nested.pos;
       } else {
         endPos = nextCh ? forward(nested.pos, nextCh) : nested.pos;
-        sexp = callTransform(xform, "list", nested.context, startPos, endPos,
-          {open: ch, close: close[ch]});
+        sexp = callTransform(xform, "list", nested.context, startPos, endPos, brackets);
       }
 
       context = context.concat([sexp]);
@@ -204,7 +215,7 @@
     // If we are here, either there is a char not covered by the sexp reader
     // rules or we are toplevel and encountered garbage
     var startPos = clonePos(pos), errPos = forward(pos, ch);
-    var err = readError("Unexpected character: " + ch, startPos, errPos);
+    var err = readError("Unexpected character: " + ch, startPos, errPos, null);
     err = callTransform(xform, "error", err, startPos, errPos);
     context = context.concat([err]);
     return {input: input.slice(1), context: context, pos: errPos};
@@ -308,7 +319,7 @@
       // FIXME: there can be other junk except closing parens...
       function(c) { return closing.indexOf(c) > -1; },
       function(read, rest, prevPos, newPos) {
-        var err = readError("Unexpected input: '" + read + "'", prevPos, newPos);
+        var err = readError("Unexpected input: '" + read + "'", prevPos, newPos, null);
         var result = callTransform(xform, "error", err, prevPos, newPos);
         context = context.concat([result]);
         return {pos: newPos,input:rest,context:context};
@@ -317,11 +328,12 @@
 
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-  function readError(msg, startPos, endPos) {
+  function readError(msg, startPos, endPos, children) {
     return {
       error: msg + " at line "
           + (endPos.row+1) + " column " + endPos.column,
-      start: clonePos(startPos), end: clonePos(endPos)
+      start: clonePos(startPos), end: clonePos(endPos),
+      children: children
     }
   }
 
@@ -370,7 +382,10 @@
   }
 
 });
-/*global window, process, global*/
+
+/*global window, process, global,module*/
+
+"format global";
 
 ;(function(run) {
   var isNodejs = typeof module !== "undefined" && module.require;
@@ -486,12 +501,16 @@
   var w = exports.walk = {
 
     hasChildren: function(n) {
-      return n.type === 'list' || n.type === 'toplevel';
+      return n.type === 'list'
+          || n.type === 'toplevel'
+          || (n.type === 'error' && n.children);
     },
 
     containingSexpsAt: function(ast, idx, matchFunc) {
       return util.flatFilterTree(ast, function(n) {
-        return (n.type === 'toplevel' || n.start < idx && idx < n.end)
+        return (n.type === 'toplevel'
+             || (n.type === 'error' && n.start < idx && idx <= n.end)
+             || (n.start < idx && idx < n.end))
             && (!matchFunc || matchFunc(n));
       }, getChildren);
     },
@@ -560,7 +579,10 @@
 
   function getChildren(node) { return node.children || []; }
 });
-/*global window, process, global*/
+
+/*global window, process, global,module*/
+
+"format global";
 
 ;(function(run) {
   var isNodejs = typeof module !== "undefined" && module.require;
@@ -1006,6 +1028,7 @@
       var linesToIndent = src.slice(startLineIdx, endLineIdx).split("\n");
 
       return linesToIndent.reduce(function(indent, line) {
+debugger;
         var idx = indent.idx,
             changes = indent.changes,
             ast = indent.ast,

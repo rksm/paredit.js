@@ -1,10 +1,13 @@
 /*global window, process, global, module*/
 
+"format global";
+
 // If not on nodejs: concat or load lib files after loading this files.
 
 (function() {
-  var isNodejs = typeof module !== "undefined" && module.require;
-  var exports = isNodejs ? module.exports : (window.paredit = {});
+  var isNodejs = typeof module !== "undefined" && module.require,
+      exports = isNodejs ? module.exports : (window.paredit = {});
+
   if (isNodejs) {
     exports.reader       = module.require("./lib/reader").reader;
     exports.navigator    = module.require("./lib/navigator").navigator;
@@ -22,11 +25,12 @@
       var result = {type: type, start: start.idx, end: end.idx};
       if (type === "error") {
         result.error = read.error;
+        if (read.children) result.children = read.children;
         errors.push(result);
       } else if (addSrc && type !== 'list')
         result.source = src.slice(result.start, result.end);
       if (type === "list") result.children = read;
-      if (type === "list" || type === "string") {
+      if (type === "list" || type === "string" || (type === "error" && args)) {
         result.open = args.open;
         result.close = args.close;
       }

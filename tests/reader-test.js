@@ -1,4 +1,4 @@
-/*global process, beforeEach, afterEach, describe, it*/
+/*global process, beforeEach, afterEach, describe, it,module*/
 
 var isNodejs = typeof module !== "undefined" && module.require;
 var paredit = isNodejs ? module.require("../index") : window.paredit;
@@ -257,7 +257,9 @@ describe('reading sexps', function() {
       var actual = readSexp("(a(b)"),
           expected = {
             error: "Expected ')' but reached end of input at line 1 column 5",
-            start: pos(0,0,0), end: pos(5,0,5)};
+            start: pos(0,0,0), end: pos(5,0,5),
+            children: ["a", ["b"]]
+          };
       expect(actual).deep.equals(expected, diff(actual,expected));
     });
 

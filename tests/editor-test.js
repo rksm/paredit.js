@@ -1,4 +1,6 @@
-/*global process, beforeEach, afterEach, describe, it*/
+/*global process, beforeEach, afterEach, describe, it,module*/
+
+"format global";
 
 var isNodejs = typeof module !== "undefined" && module.require;
 var paredit = isNodejs ? module.require("../index") : window.paredit;
@@ -107,7 +109,7 @@ describe('paredit editor', function() {
         .transforms('a |())->a (|())')
         .withChanges([['insert', 2, "("]]);
     });
-    
+
     describe("with paredit correction disabled", function() {
       edit('openList', {freeEdits: true})
         .transforms('a |(())->a (|(())')
@@ -453,6 +455,17 @@ describe('paredit editor', function() {
 
     it("keeps indentation of strings", function() {
       expectIndent('(defun foo (x)\n  (* x x))\n\n', '(defun foo (x)\n  (* x x))\n\n');
+    });
+
+
+    describe("with errors", function() {
+
+      it("unclosed sexp", () =>
+        expectIndent("[[[[[[\nx\ny\n]", "[[[[[[\n      x\n      y\n      ]"));
+
+      it("unclosed sexp", () =>
+        expectIndent("[[[[[[\nx\ny\n]", "[[[[[[\n      x\n      y\n      ]"));
+
     });
 
   });

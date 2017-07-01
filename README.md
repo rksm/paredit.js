@@ -8,3 +8,27 @@ For more details see the project page [here](http://robert.kra.hn/projects/pared
 ## Usage
 
 `npm install` then see examples.
+
+
+## Dev
+
+Load via lively.modules:
+
+```js
+await load();
+
+async function load() {
+  var lm = lively.modules,
+      files = ["./index.js",
+               './lib/util.js',
+               "./lib/reader.js",
+               "./lib/navigator.js",
+               "./lib/editor.js",
+               // "./tests/reader-test.js",
+               // "./tests/navigator-test.js",
+               // "./tests/editor-test.js"
+              ],
+      p = lm.getPackage("paredit.js");
+  for (let f of files) await lm.module(lively.lang.string.joinPath(p.url, f)).reload();
+}
+```
