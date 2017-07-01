@@ -1028,7 +1028,6 @@
       var linesToIndent = src.slice(startLineIdx, endLineIdx).split("\n");
 
       return linesToIndent.reduce(function(indent, line) {
-debugger;
         var idx = indent.idx,
             changes = indent.changes,
             ast = indent.ast,
