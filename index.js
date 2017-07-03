@@ -5,14 +5,14 @@
 // If not on nodejs: concat or load lib files after loading this files.
 
 (function() {
-  var isNodejs = typeof module !== "undefined" && module.require,
+  var isNodejs = typeof module !== "undefined" && module.exports,
       exports = isNodejs ? module.exports : (window.paredit = {});
 
   if (isNodejs) {
-    exports.reader       = module.require("./lib/reader").reader;
-    exports.navigator    = module.require("./lib/navigator").navigator;
-    exports.editor       = module.require("./lib/editor").editor;
-    exports.specialForms = module.require("./lib/editor").specialForms;
+    exports.reader       = require("./lib/reader").reader;
+    exports.navigator    = require("./lib/navigator").navigator;
+    exports.editor       = require("./lib/editor").editor;
+    exports.specialForms = require("./lib/editor").specialForms;
   }
 
   exports.parse = function(src, options) {

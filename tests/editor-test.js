@@ -2,8 +2,8 @@
 
 "format global";
 
-var isNodejs = typeof module !== "undefined" && module.require;
-var paredit = isNodejs ? module.require("../index") : window.paredit;
+var isNodejs = typeof module !== "undefined" && module.exports;
+var paredit = isNodejs ? require("../index") : window.paredit;
 
 var expect, i;
 if (isNodejs) {

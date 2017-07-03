@@ -1,12 +1,12 @@
 /*global process, beforeEach, afterEach, describe, it*/
 
-var isNodejs = typeof module !== "undefined" && module.require;
-var paredit = isNodejs ? module.require("../index") : window.paredit;
+var isNodejs = typeof module !== "undefined" && module.exports;
+var paredit = isNodejs ? require("../index") : window.paredit;
 
 var expect, i;
 if (isNodejs) {
-  var chai = module.require('chai');
-  chai.use(module.require('chai-subset'));
+  var chai = require('chai');
+  chai.use(require('chai-subset'));
   expect = chai.expect;
 } else { expect = window.chai.expect; }
 
