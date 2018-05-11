@@ -11,6 +11,7 @@
   if (isNodejs) {
     exports.reader       = require("./lib/reader").reader;
     exports.navigator    = require("./lib/navigator").navigator;
+    exports.walk         = require("./lib/navigator").walk;
     exports.editor       = require("./lib/editor").editor;
     exports.specialForms = require("./lib/editor").specialForms;
   }
