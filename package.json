@@ -3,6 +3,7 @@
   "version": "0.3.3",
   "description": "Generic parser and editor for s-expressions.",
   "main": "index.js",
+  "typings": "index.d.ts",
   "scripts": {
     "test": "node_modules/mocha/bin/mocha tests/*-test.js"
   },
