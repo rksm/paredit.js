@@ -385,6 +385,10 @@ describe('paredit editor', function() {
       .withChanges([['insert', 8, " xxx"],['remove', 1, 4]]);
 
     edit("transpose",{})
+      .transforms("(xxx yy|y)->(xxx yy|y)")
+      .withChanges([['insert', 8, " xxx"],['remove', 1, 4]]);
+
+    edit("transpose",{})
       .transforms("((a)|(b))->((b)|(a))")
       .withChanges([['insert', 7, "(a)"],['remove', 1, 3]]);
 
