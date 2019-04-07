@@ -295,6 +295,25 @@ describe('reading sexps', function() {
       expect(actual).to.containSubset(expected);
     });
 
+    it("unmatched string quote", function() {
+      var actual = readSeq('"a'),
+          expected = [
+	{
+		"error": "Expected '\"' but reached end of input at line 1 column 2",
+		"start": {
+			"idx": 0,
+			"column": 0,
+			"row": 0
+		},
+		"end": {
+			"idx": 2,
+			"column": 2,
+			"row": 0
+		},
+		"children": null
+	}];
+      expect(actual).to.containSubset(expected);
+    });
   });
 
 });
