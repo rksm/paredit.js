@@ -87,6 +87,11 @@ describe('reading sexps', function() {
   describe("numbers", function() {
     it("reads number value", function() {
       expect(readSexp('123')).eq(123);
+      expect(readSexp('123.55')).eq(123.55);
+      expect(readSexp('.123')).eq(.123);
+      expect(readSexp('-123')).eq(-123);
+      expect(readSexp('-123.55')).eq(-123.55);
+      expect(readSexp('-.123')).eq(-.123);
     });
   });
 
