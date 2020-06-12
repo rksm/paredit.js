@@ -19,6 +19,7 @@ await load();
 
 async function load() {
   var lm = lively.modules,
+      p = lm.getPackage("paredit.js"),
       files = ["./index.js",
                './lib/util.js',
                "./lib/reader.js",
@@ -27,8 +28,8 @@ async function load() {
                // "./tests/reader-test.js",
                // "./tests/navigator-test.js",
                // "./tests/editor-test.js"
-              ],
-      p = lm.getPackage("paredit.js");
-  for (let f of files) await lm.module(lively.lang.string.joinPath(p.url, f)).reload();
+              ].map(f => lm.module(lively.lang.string.joinPath(p.url, f)).reload()),
+     ;
+  await Promise.all(files);
 }
 ```
