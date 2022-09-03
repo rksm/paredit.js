@@ -100,12 +100,12 @@ export namespace editor {
     export function openList(ast: AST, src: string, idx: number, args?: OpenListArgs): EditorChanges
     export function spliceSexp(ast: AST, src: string, idx: number): EditorChanges | null
     export function spliceSexpKill(ast: AST, src: string, idx: number, args?: CountAndBackwardArgs): EditorChanges | null
-    export function splitSexp(ast: AST, src: string, idx: number): EditorChanges | null | undefined // The `undefined` path may not be intentional
+    export function splitSexp(ast: AST, src: string, idx: number): EditorChanges | null
     export function killSexp(ast: AST, src: string, idx: number, args?: CountAndBackwardArgs): EditorChanges | null
     export function wrapAround(ast: AST, src: string, idx: number, wrapWithStart: string, wrapWithEnd: string, args?: WrapArgs): EditorChanges | null
     export function closeAndNewLine(ast: AST, src: string, idx: number, close?: string): EditorChanges | null
-    export function barfSexp(ast: AST, src: string, idx: number, args?: SexpBarfArgs): EditorChanges | null | undefined // The `undefined` path may not be intentional
-    export function slurpSexp(ast: AST, src: string, idx: number, args?: CountAndBackwardArgs): EditorChanges | null | undefined  // The `undefined` path may not be intentional
+    export function barfSexp(ast: AST, src: string, idx: number, args?: SexpBarfArgs): EditorChanges | null
+    export function slurpSexp(ast: AST, src: string, idx: number, args?: CountAndBackwardArgs): EditorChanges | null
     export function transpose(ast: AST, src: string, idx: number, args?: {}): EditorChanges | null // args?
     function deleteX(ast: AST, src: string, idx: number, args?: DeleteArgs): EditorChanges | null
     export { deleteX as delete } // hackish way to export 'delete', which is a reserved word
