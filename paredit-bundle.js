@@ -174,6 +174,10 @@
     if (ch === '"')              return readString(input, context, pos, xform);
     if (ch === '\\')             return readChar(input, context, pos, xform);
     if (/[0-9]/.test(ch))        return readNumber(input, context, pos, xform);
+    if (ch === '-' && (/[0-9]/.test(input[1]) || (input[1] == '.' && /[0-9]/.test(input[2]))))
+                                 return readNumber(input, context, pos, xform);
+    if (ch === '.' && (/[0-9]/.test(input[1])))
+                                 return readNumber(input, context, pos, xform);
     if (symRe.test(ch))          return readSymbol(input, context, pos, xform);
 
     // 5. list end?
@@ -251,10 +255,17 @@
       else if (c === "\\") escaped = true;
       return true;
     }, function(read, rest, prevPos, newPos) {
-      string = string + read + rest[0];
-      newPos = forward(newPos, rest[0]); rest = rest.slice(1);
-      var result = callTransform(xform, "string", string, startPos, newPos,
-        {open: '"', close: '"'});
+      var result;
+      if (rest[0] == '"') {
+        string = string + read + rest[0];
+        newPos = forward(newPos, rest[0]);
+        rest = rest.slice(1);
+        result = callTransform(xform, "string", string, startPos, newPos,
+          {open: '"', close: '"'});
+      } else {
+        var err = readError("Expected '\"' but reached end of input", startPos, newPos, null);
+        result = callTransform(xform, "error", err, prevPos, newPos);
+      }
       context = context.concat([result]);
       return {pos:newPos,input:rest,context:context};
     });
@@ -282,8 +293,20 @@
   }
 
   function readNumber(input, context, pos, xform) {
+    var first = true,
+        seenSeperator = false;
     return takeWhile(input, pos,
-      function(c) { return /[0-9]/.test(c); },
+      function(c) {
+        if (first) {
+          first = false;
+          if (c === '-') return true;
+        }
+        if(seenSeperator && c === '.') {
+          seenSeperator = false;
+          return true
+        }
+        return /[0-9.]/.test(c);
+      },
       function(read, rest, prevPos, newPos) {
         var result = callTransform(xform, "number", Number(read), prevPos, newPos);
         context = context.concat([result])
@@ -759,7 +782,7 @@
       var sexps = w.containingSexpsAt(ast,idx);
       if (!sexps.length) return null;
       var sexp = sexps.pop();
-      if (sexp.type === "toplevel") return;
+      if (sexp.type === "toplevel") return null;
       if (!w.hasChildren(sexp) && sexp.type !== "string")
         return null;
       // we are dealing with a list or string split
@@ -859,7 +882,7 @@
           ['remove', parent.start, parent.open.length]];
       } else {
         var right = rightSiblings(parent, idx);
-        if (!right.length) return;
+        if (!right.length) return null;
         var changes = [
           ['remove', parent.end-parent.close.length, parent.close.length],
           ['insert', right[right.length-2] ? right[right.length-2].end : (inner ? inner.end : idx), parent.close]];
@@ -876,13 +899,13 @@
       var parentParent = sexps.pop();
       if (backward) {
         var left = leftSiblings(parentParent, idx);
-        if (!left.length) return;
+        if (!left.length) return null;
         var changes = [
           ['remove', parent.start, parent.open.length],
           ['insert', left.slice(-count)[0].start, parent.open]];
       } else {
         var right = rightSiblings(parentParent, idx);
-        if (!right.length) return;
+        if (!right.length) return null;
         var changes = [
           ['insert', last(right.slice(0,count)).end, parent.close],
           ['remove', parent.end-parent.close.length, parent.close.length]];
@@ -896,11 +919,12 @@
       var outerSexps = w.containingSexpsAt(ast, idx, w.hasChildren),
           parent = last(outerSexps),
           left = leftSiblings(parent, idx),
-          right = rightSiblings(parent, idx);
+          right = rightSiblings(parent, idx),
+          inside = parent.children.find(function(n) {
+            return n.start < idx && idx < n.end; });
 
-      // if "inside" a leaf node do nothing
-      if (parent.children.some(function(n) {
-          return n.start < idx && idx < n.end; })) return null;
+      // if "inside" a leaf node, use it to transpose with node left of in
+      if (inside) right = [inside];
       // nothing there to transpose...
       if (!left.length || !right.length) return null;
 
@@ -967,6 +991,7 @@
           left = isInList && leftSiblings(parent, idx),
           right = isInList && rightSiblings(parent, idx),
           noDelete = {changes: [], newIndex: idx},
+          moveLeft = {changes: [], newIndex: idx-1},
           simpleDelete = {
             changes: [['remove', backward ? idx-count : idx, count]],
             newIndex: backward ? idx-count : idx
@@ -979,6 +1004,7 @@
         var n = last(left);
         if (n.end !== idx || isSaveToPartialDelete(n)) return simpleDelete;
         if (isEmpty(n) || n.type === "char") return deleteSexp(n);
+        if (count == 1) return moveLeft;
         return noDelete;
       }
 
