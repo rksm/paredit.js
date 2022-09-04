@@ -12,6 +12,22 @@ For more details see the project page [here](http://robert.kra.hn/projects/pared
 
 ## Dev
 
+### build
+
+Update `paredit-bundle.min.js` and `paredit-bundle.js`:
+
+```shell
+node build.js
+```
+
+### Testing
+
+Manually: You can open [examples/paredit.html](examples/paredit.html) in a browser (directly the file, no need to use a http server). Build before you do that.
+
+Unit tests: `npm run test`
+
+### With Lively
+
 Load via lively.modules:
 
 ```js
